@@ -4,8 +4,12 @@ import {
   text,
   primaryKey,
   integer,
+  pgEnum,
+  index,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
+
+export const roleEnum = pgEnum("role", ["user", "assistant"]);
 
 export const users = pgTable("user", {
   id: text("id")
@@ -65,4 +69,40 @@ export const verificationTokens = pgTable(
       }),
     },
   ]
+);
+
+// Chats table
+export const chats = pgTable(
+  "chat",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title"),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [index("chat_user_id_idx").on(table.userId)]
+);
+
+// Messages table
+export const messages = pgTable(
+  "message",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    chatId: text("chatId")
+      .notNull()
+      .references(() => chats.id, { onDelete: "cascade" }),
+    senderId: text("senderId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    role: roleEnum("role").notNull(),
+    sentAt: timestamp("sentAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [index("message_chat_id_idx").on(table.chatId)]
 );
