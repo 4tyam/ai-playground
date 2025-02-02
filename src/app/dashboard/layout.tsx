@@ -5,6 +5,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import UserButton from "@/components/user-button";
 import { auth } from "../auth";
 import { redirect } from "next/navigation";
+import { NuqsAdapter } from 'nuqs/adapters/next/app'
 
 
 export default async function Layout({
@@ -23,20 +24,20 @@ export default async function Layout({
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4 pr-8">
+        <header className="flex h-16 shrink-0 items-center justify-between gap-2  px-4 pr-8">
           <div className="flex items-center gap-2">
             <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
+          {/* <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb className="text-sm sm:text-base">
             Data Fetching
-          </Breadcrumb>
+          </Breadcrumb> */}
           </div>
           <div>
             <UserButton />
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4">
-          {children}
+          <NuqsAdapter>{children}</NuqsAdapter>
         </div>
       </SidebarInset>
     </SidebarProvider>

@@ -65,9 +65,9 @@ function SidebarTopNav() {
 
   return (
     <>
-      <div className="flex items-center justify-between pt-2 pl-2">
+      <div className="flex items-center justify-between pt-1.5 pl-2">
         <div>
-          <span className="text-lg font-bold">AI Playground</span>
+          <span className="text-lg font-bold text-black dark:text-white">ai playground</span>
         </div>
         <div className="flex items-center">
           <ButtonWithTooltip 
@@ -89,10 +89,10 @@ function SidebarTopNav() {
             tooltipContent={
               <div className="flex flex-col items-center">
                 New chat
-                <div className="flex items-center text-sm text-gray-500/80 gap-0.5">
+                {/* <div className="flex items-center text-sm text-gray-500/80 gap-0.5">
                   <span>⌘</span>
                   <span>N</span>
-                </div>
+                </div> */}
               </div>
             }
           />

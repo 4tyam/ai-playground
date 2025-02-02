@@ -9,13 +9,12 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import {
   LogOut,
-  Settings,
   Download,
   Sparkles,
   Chrome,
-
 } from "lucide-react";
-import {  ThemeToggle } from "./theme-toggle";
+import { ThemeToggle } from "./theme-toggle";
+import { SettingsDialog } from "./settings-dialog";
 
 const UserButton = async () => {
   const session = await auth();
@@ -31,10 +30,7 @@ const UserButton = async () => {
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-[230px] mr-4 rounded-xl">
           <ThemeToggle />
-          <DropdownMenuItem className="p-2.5 cursor-pointer rounded-xl">
-            <Settings className="mr-2" />
-            Settings
-          </DropdownMenuItem>
+          <SettingsDialog />
           <DropdownMenuSeparator />
           <DropdownMenuItem className="p-2.5 cursor-pointer rounded-xl">
             <Download className="mr-2" />
