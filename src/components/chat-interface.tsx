@@ -2,10 +2,10 @@
 
 import {
   Plus,
-  ImageIcon,
+  FileIcon,
   SendHorizonalIcon,
   MicIcon,
-  SparklesIcon,
+  XIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,6 +26,28 @@ import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { useDropzone } from 'react-dropzone';
+
+type FilePreview = {
+  url: string;
+  type: 'image' | 'pdf' | 'xlsx' | 'other';
+  name: string;
+  fileType?: string;
+};
+
+const ACCEPTED_IMAGE_TYPES = {
+  'image/*': []
+};
+
+const ACCEPTED_DOCUMENT_TYPES = {
+  'application/pdf': [],
+  'application/msword': [],
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [], // .docx
+  'application/vnd.ms-excel': [],
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [], // .xlsx
+  'text/plain': []
+};
 
 export default function ChatInterface({
   titleShown,
@@ -38,6 +60,9 @@ export default function ChatInterface({
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [model, setModel] = useState("gpt-4o-mini");
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const models = [
     {
@@ -70,6 +95,11 @@ export default function ChatInterface({
       id: "claude-3-5-sonnet",
       icon: "/ai-models/anthropic.svg",
     },
+    {
+        name: "Mixtral 8x7B",
+        id: "mixtral-8x7b-32768",
+        icon: "/ai-models/mistral.svg",
+      },
     {
         name: "Llama 3.3 70B",
         id: "llama-3.3-70b-versatile	",
@@ -110,6 +140,71 @@ export default function ChatInterface({
     }
   };
 
+  const handleFile = (file: File) => {
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFilePreviews(prev => [...prev, {
+          url: reader.result as string,
+          type: 'image',
+          name: file.name
+        }]);
+        setSelectedImages(prev => [...prev, file]);
+      };
+      reader.readAsDataURL(file);
+    } else if (file.type === 'application/pdf') {
+      setFilePreviews(prev => [...prev, {
+        url: URL.createObjectURL(file),
+        type: 'pdf',
+        name: file.name
+      }]);
+      setSelectedImages(prev => [...prev, file]);
+    } else if (
+      file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      file.type === 'application/vnd.ms-excel' ||
+      fileExtension === 'xlsx' ||
+      fileExtension === 'xls'
+    ) {
+      setFilePreviews(prev => [...prev, {
+        url: '/placeholders/excel.png',
+        type: 'xlsx',
+        name: file.name
+      }]);
+      setSelectedImages(prev => [...prev, file]);
+    } else {
+      setFilePreviews(prev => [...prev, {
+        url: '',
+        type: 'other',
+        name: file.name,
+        fileType: fileExtension?.toUpperCase() || 'FILE'
+      }]);
+      setSelectedImages(prev => [...prev, file]);
+    }
+  };
+
+  const onDrop = (acceptedFiles: File[]) => {
+    const remainingSlots = 4 - filePreviews.length;
+    const filesToAdd = acceptedFiles.slice(0, remainingSlots);
+    
+    if (acceptedFiles.length > remainingSlots) {
+      toast.error('Maximum 4 files allowed');
+    }
+
+    filesToAdd.forEach(handleFile);
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      ...ACCEPTED_IMAGE_TYPES,
+      ...ACCEPTED_DOCUMENT_TYPES
+    },
+    noClick: true,
+    noKeyboard: true,
+  });
+
   return (
     <div className="w-full max-w-3xl mx-auto space-y-3">
       {titleShown && (
@@ -118,8 +213,85 @@ export default function ChatInterface({
         </h2>
       )}
 
-      <Card className="dark:bg-[#18181B]">
-        <CardContent className="p-3.5" onClick={handleCardClick}>
+      <Card className={`dark:bg-[#18181B] ${isDragActive ? 'ring-2 ring-primary' : ''}`}>
+        <CardContent 
+          className="p-3.5 relative" 
+          onClick={handleCardClick}
+          {...getRootProps()}
+        >
+          {isDragActive && (
+            <div className="absolute inset-0 bg-primary/10 rounded-lg z-10 flex items-center justify-center">
+              <p className="text-primary font-medium">Drop files here</p>
+            </div>
+          )}
+          <input {...getInputProps()} />
+          
+          {filePreviews.length > 0 && (
+            <div className="mb-3">
+              <div className="flex gap-3">
+                {filePreviews.map((preview, index) => (
+                  <div key={index} className="relative inline-block w-[175px] h-[125px]">
+                    {preview.type === 'pdf' ? (
+                      <div className="w-full h-full rounded-lg flex flex-col items-center justify-center overflow-hidden">
+                        <iframe
+                          src={`${preview.url}#toolbar=0&navpanes=0&scrollbar=0`}
+                          className="w-full h-full bg-white scale-110"
+                          style={{ border: 'none' }}
+                        />
+                        <div className="absolute bottom-2 left-2 bg-black/75 px-2 py-0.5 rounded text-xs text-white">
+                          PDF
+                        </div>
+                      </div>
+                    ) : preview.type === 'xlsx' ? (
+                      <div className="w-full h-full rounded-lg flex flex-col items-center justify-center bg-emerald-500/10">
+                        <Image
+                          src="/placeholders/excel.png"
+                          alt="Excel file"
+                          width={40}
+                          height={40}
+                          className="mb-2"
+                        />
+                        <div className="bg-black/75 px-2 py-0.5 rounded text-xs text-white">
+                          XLSX
+                        </div>
+                      </div>
+                    ) : preview.type === 'image' ? (
+                      <Image
+                        src={preview.url}
+                        alt={`Uploaded file ${index + 1}`}
+                        fill
+                        className="rounded-lg object-cover"
+                        sizes="150px"
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-lg flex flex-col items-center justify-center bg-blue-500">
+                        <div className="text-blue-500 font-medium mb-2 uppercase text-sm">
+                          {preview.fileType}
+                        </div>
+                        <div className="bg-black/75 px-2 py-0.5 rounded text-xs text-white">
+                          Document
+                        </div>
+                      </div>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (preview.type === 'pdf') {
+                          URL.revokeObjectURL(preview.url);
+                        }
+                        setSelectedImages(prev => prev.filter((_, i) => i !== index));
+                        setFilePreviews(prev => prev.filter((_, i) => i !== index));
+                      }}
+                      className="absolute -top-2 -right-2 p-1 bg-destructive rounded-full transition-colors z-10"
+                    >
+                      <XIcon className="h-3 w-3 text-white" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
           <ScrollArea className="min-h-[35px] max-h-[80px] sm:max-h-[160px]">
             <Textarea
               ref={inputRef}
@@ -134,7 +306,7 @@ export default function ChatInterface({
 
           <div className="flex items-center gap-1.5 mt-3">
             <TooltipProvider>
-              <DropdownMenu>
+              <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
@@ -150,9 +322,29 @@ export default function ChatInterface({
                   side={isMobile ? "top" : "bottom"}
                   align="start"
                 >
-                  <DropdownMenuItem className="p-2.5 cursor-pointer rounded-xl">
-                    <ImageIcon className="mr-2 h-4 w-4" />
-                    Upload image
+                  <DropdownMenuItem 
+                    className="p-2.5 cursor-pointer rounded-xl"
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      if (selectedImages.length >= 4) {
+                        toast.error('Maximum 4 files allowed');
+                        return;
+                      }
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = Object.keys({...ACCEPTED_IMAGE_TYPES, ...ACCEPTED_DOCUMENT_TYPES}).join(',');
+                      input.onchange = (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (file) {
+                          handleFile(file);
+                          setDropdownOpen(false);
+                        }
+                      };
+                      input.click();
+                    }}
+                  >
+                    <FileIcon className="mr-0.5 h-4 w-4" />
+                    Upload files
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -182,6 +374,7 @@ export default function ChatInterface({
                   <DropdownMenuContent
                     className="w-[200px] rounded-xl"
                     align="start"
+                    side={isMobile ? "top" : "right"}
                   >
                     {models.map((m) => (
                       <DropdownMenuItem

@@ -1,6 +1,6 @@
 import ChatInterface from "@/components/chat-interface";
 
-function DashboardPage() {
+function ChatPage() {
   return (
     <main className="h-[calc(100vh-200px)] flex sm:items-center justify-center px-4 overflow-hidden">
       <div className="w-full fixed sm:static bottom-4 left-0 px-4 sm:px-0">
@@ -10,4 +10,4 @@ function DashboardPage() {
   );
 }
 
-export default DashboardPage;
+export default ChatPage;

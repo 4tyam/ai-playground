@@ -6,9 +6,10 @@ import UserButton from "@/components/user-button";
 import { auth } from "../auth";
 import { redirect } from "next/navigation";
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
+import { Toaster } from "sonner";
 
 
-export default async function Layout({
+export default async function ChatLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -38,6 +39,7 @@ export default async function Layout({
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4">
           <NuqsAdapter>{children}</NuqsAdapter>
+          <Toaster />
         </div>
       </SidebarInset>
     </SidebarProvider>
