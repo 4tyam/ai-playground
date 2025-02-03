@@ -53,10 +53,10 @@ const LOCAL_STORAGE_MODEL_KEY = "ai-playground:selected-model";
 
 export default function ChatBar({
   titleShown,
-  modelsShown,
+  modelsReadOnly,
 }: {
   titleShown: boolean;
-  modelsShown: boolean;
+  modelsReadOnly: boolean;
 }) {
   const isMobile = useIsMobile();
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -401,62 +401,62 @@ export default function ChatBar({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {modelsShown && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="text-gray-600 h-8 hover:text-gray-700 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px] rounded-full shrink-0 text-xs px-3 py-1 inline-flex items-center gap-1.5"
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="text-gray-600 h-8 hover:text-gray-700 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px] rounded-full shrink-0 text-xs px-3 py-1 inline-flex items-center gap-1.5"
+                    disabled={modelsReadOnly}
+                  >
+                    <Image
+                      src={models.find((m) => m.id === model)?.icon || ""}
+                      alt="Model icon"
+                      width={15}
+                      height={15}
+                      draggable={false}
+                      className={`${
+                        models
+                          .find((m) => m.id === model)
+                          ?.icon.includes("openai") ||
+                        models
+                          .find((m) => m.id === model)
+                          ?.icon.includes("anthropic")
+                          ? "dark:invert"
+                          : ""
+                      }`}
+                    />
+                    {!modelsReadOnly && "Models"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-[200px] rounded-xl"
+                  align="start"
+                  side={isMobile ? "top" : "right"}
+                >
+                  {models.map((m) => (
+                    <DropdownMenuItem
+                      key={m.id}
+                      className="p-2.5 cursor-pointer rounded-xl flex items-center"
+                      onClick={() => setModel(m.id)}
                     >
                       <Image
-                        src={models.find((m) => m.id === model)?.icon || ""}
-                        alt="Model icon"
-                        width={15}
-                        height={15}
-                        className={`${
-                          models
-                            .find((m) => m.id === model)
-                            ?.icon.includes("openai") ||
-                          models
-                            .find((m) => m.id === model)
-                            ?.icon.includes("anthropic")
+                        src={m.icon}
+                        alt={m.name}
+                        width={18}
+                        height={18}
+                        className={`mr-1 ${
+                          m.icon.includes("openai") ||
+                          m.icon.includes("anthropic")
                             ? "dark:invert"
                             : ""
                         }`}
                       />
-                      Models
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    className="w-[200px] rounded-xl"
-                    align="start"
-                    side={isMobile ? "top" : "right"}
-                  >
-                    {models.map((m) => (
-                      <DropdownMenuItem
-                        key={m.id}
-                        className="p-2.5 cursor-pointer rounded-xl flex items-center"
-                        onClick={() => setModel(m.id)}
-                      >
-                        <Image
-                          src={m.icon}
-                          alt={m.name}
-                          width={18}
-                          height={18}
-                          className={`mr-1 ${
-                            m.icon.includes("openai") ||
-                            m.icon.includes("anthropic")
-                              ? "dark:invert"
-                              : ""
-                          }`}
-                        />
-                        {m.name}
-                        {model === m.id && <span className="ml-auto">✓</span>}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+                      {m.name}
+                      {model === m.id && <span className="ml-auto">✓</span>}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>

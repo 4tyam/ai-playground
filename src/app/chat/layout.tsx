@@ -1,20 +1,22 @@
 import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import UserButton from "@/components/user-button";
 import { auth } from "../auth";
 import { redirect } from "next/navigation";
-import { NuqsAdapter } from 'nuqs/adapters/next/app'
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Toaster } from "sonner";
-
 
 export default async function ChatLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   const session = await auth();
 
   if (!session?.user) {
@@ -28,7 +30,7 @@ export default async function ChatLayout({
         <header className="flex h-16 shrink-0 items-center justify-between gap-2  px-4 pr-8">
           <div className="flex items-center gap-2">
             <SidebarTrigger className="-ml-1" />
-          {/* <Separator orientation="vertical" className="mr-2 h-4" />
+            {/* <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb className="text-sm sm:text-base">
             Data Fetching
           </Breadcrumb> */}
