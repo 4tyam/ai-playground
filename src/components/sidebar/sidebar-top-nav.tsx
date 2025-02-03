@@ -4,7 +4,6 @@ import { SearchIcon, SquarePenIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
-  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
@@ -16,10 +15,12 @@ import {
 import { useEffect, useState } from "react";
 import { DialogDescription, DialogTitle } from "@radix-ui/react-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
+import { useRouter } from "next/navigation";
 
 function SidebarTopNav() {
   const [open, setOpen] = useState(false)
   const isMobile = useIsMobile();
+  const router = useRouter();
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -86,6 +87,7 @@ function SidebarTopNav() {
           
           <ButtonWithTooltip 
             icon={<SquarePenIcon className="size-[18px]"/>}
+            onClick={() => router.push('/chat')}
             tooltipContent={
               <div className="flex flex-col items-center">
                 New chat

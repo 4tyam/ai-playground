@@ -1,59 +1,80 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Settings, UserPen, MessageSquare, Database, Cog, AppWindow, Shield, X, ChevronLeft, CircleUserIcon } from "lucide-react"
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
-import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "./ui/separator"
-import { useTheme } from "next-themes"
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Settings,
+  UserPen,
+  Cog,
+  AppWindow,
+  X,
+  ChevronLeft,
+  CircleUserIcon,
+  ChartArea,
+} from "lucide-react";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "./ui/separator";
+import { useTheme } from "next-themes";
 
 const sidebarItems = [
   { id: "general", icon: Cog, label: "General" },
   { id: "personalization", icon: UserPen, label: "Personalization" },
   { id: "connected-apps", icon: AppWindow, label: "Connected apps" },
+  { id: "usage", icon: ChartArea, label: "Usage" },
   { id: "account", icon: CircleUserIcon, label: "Account" },
-]
+];
 
 export function SettingsDialog() {
-  const { theme, setTheme } = useTheme()
-  const [open, setOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState("general")
-  const [showSidebar, setShowSidebar] = useState(true)
-  const [isMobile, setIsMobile] = useState(false)
+  const { theme, setTheme } = useTheme();
+  const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("general");
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640)
+      setIsMobile(window.innerWidth < 640);
       if (window.innerWidth >= 640) {
-        setShowSidebar(true)
+        setShowSidebar(true);
       }
-    }
+    };
 
     // Initial check
-    checkMobile()
+    checkMobile();
 
     // Add event listener for window resize
-    window.addEventListener('resize', checkMobile)
+    window.addEventListener("resize", checkMobile);
 
     // Cleanup
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const handleTabChange = (id: string) => {
-    setActiveTab(id)
+    setActiveTab(id);
     if (isMobile) {
-      setShowSidebar(false)
+      setShowSidebar(false);
     }
-  }
+  };
 
   const handleOpenChange = (isOpen: boolean) => {
-    setOpen(isOpen)
-    setShowSidebar(true)
-  }
+    setOpen(isOpen);
+    setShowSidebar(true);
+  };
 
   const renderTabContent = () => {
     // You can add different content for each tab here
@@ -63,17 +84,27 @@ export function SettingsDialog() {
           <>
             <div className="flex items-center justify-between -mb-2 mt-2">
               <Label>Theme</Label>
-              <Select 
-                defaultValue={theme} 
+              <Select
+                defaultValue={theme}
                 onValueChange={(value) => setTheme(value)}
               >
                 <SelectTrigger className="w-[120px] rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="border-none rounded-xl" side="right" align="start">
-                  <SelectItem className="rounded-lg" value="light">Light</SelectItem>
-                  <SelectItem className="rounded-lg" value="dark">Dark</SelectItem>
-                  <SelectItem className="rounded-lg" value="system">System</SelectItem>
+                <SelectContent
+                  className="border-none rounded-xl"
+                  side="right"
+                  align="start"
+                >
+                  <SelectItem className="rounded-lg" value="light">
+                    Light
+                  </SelectItem>
+                  <SelectItem className="rounded-lg" value="dark">
+                    Dark
+                  </SelectItem>
+                  <SelectItem className="rounded-lg" value="system">
+                    System
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -94,7 +125,10 @@ export function SettingsDialog() {
 
             <div className="flex items-center justify-between">
               <Label>Delete all chats</Label>
-              <Button variant="destructive" className="rounded-xl px-5 py-1 h-8">
+              <Button
+                variant="destructive"
+                className="rounded-xl px-5 py-1 h-8"
+              >
                 Delete all
               </Button>
             </div>
@@ -106,7 +140,7 @@ export function SettingsDialog() {
               </Button>
             </div> */}
           </>
-        )
+        );
       case "personalization":
         return (
           <div className="flex items-center justify-between">
@@ -115,24 +149,24 @@ export function SettingsDialog() {
               Edit
             </Button>
           </div>
-        )
+        );
       // Add cases for other tabs as needed
       default:
         return (
           <div className="text-sm text-gray-500">
             Content for {activeTab} will be added here
           </div>
-        )
+        );
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <DropdownMenuItem
           onSelect={(e) => {
-            e.preventDefault()
-            setOpen(true)
+            e.preventDefault();
+            setOpen(true);
           }}
           className="p-2.5 cursor-pointer rounded-xl"
         >
@@ -154,13 +188,15 @@ export function SettingsDialog() {
               </Button>
             )}
             <DialogTitle>
-              {!showSidebar ? sidebarItems.find(item => item.id === activeTab)?.label : 'Settings'}
+              {!showSidebar
+                ? sidebarItems.find((item) => item.id === activeTab)?.label
+                : "Settings"}
             </DialogTitle>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="size-7 rounded-full" 
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 rounded-full"
             onClick={() => setOpen(false)}
           >
             <X className="size-4" />
@@ -169,9 +205,9 @@ export function SettingsDialog() {
 
         <div className="flex max-h-[85vh] sm:max-h-[600px] overflow-hidden -mt-4">
           {/* Sidebar */}
-          <div 
+          <div
             className={`${
-              showSidebar ? 'flex' : 'hidden'
+              showSidebar ? "flex" : "hidden"
             } sm:flex w-full sm:w-52 flex-shrink-0 overflow-y-auto`}
           >
             <div className="w-full">
@@ -192,7 +228,7 @@ export function SettingsDialog() {
             </div>
           </div>
 
-          <Separator orientation="vertical"/>
+          <Separator orientation="vertical" />
 
           {/* Content Area */}
           {(!showSidebar || !isMobile) && (
@@ -203,5 +239,5 @@ export function SettingsDialog() {
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

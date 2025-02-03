@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -27,29 +27,31 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { useDropzone } from 'react-dropzone';
+import { useDropzone } from "react-dropzone";
 
 type FilePreview = {
   url: string;
-  type: 'image' | 'pdf' | 'xlsx' | 'other';
+  type: "image" | "pdf" | "xlsx" | "other";
   name: string;
   fileType?: string;
 };
 
 const ACCEPTED_IMAGE_TYPES = {
-  'image/*': []
+  "image/*": [],
 };
 
 const ACCEPTED_DOCUMENT_TYPES = {
-  'application/pdf': [],
-  'application/msword': [],
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [], // .docx
-  'application/vnd.ms-excel': [],
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [], // .xlsx
-  'text/plain': []
+  "application/pdf": [],
+  "application/msword": [],
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [], // .docx
+  "application/vnd.ms-excel": [],
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [], // .xlsx
+  "text/plain": [],
 };
 
-export default function ChatInterface({
+const LOCAL_STORAGE_MODEL_KEY = "ai-playground:selected-model";
+
+export default function ChatBar({
   titleShown,
   modelsShown,
 }: {
@@ -57,9 +59,30 @@ export default function ChatInterface({
   modelsShown: boolean;
 }) {
   const isMobile = useIsMobile();
-
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Add mounted state
+  const [mounted, setMounted] = useState(false);
+
+  // Initialize with default value only
   const [model, setModel] = useState("gpt-4o-mini");
+
+  // Handle localStorage in a separate effect after mount
+  useEffect(() => {
+    setMounted(true);
+    const savedModel = localStorage.getItem(LOCAL_STORAGE_MODEL_KEY);
+    if (savedModel) {
+      setModel(savedModel);
+    }
+  }, []);
+
+  // Save to localStorage when model changes
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem(LOCAL_STORAGE_MODEL_KEY, model);
+    }
+  }, [model, mounted]);
+
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -71,20 +94,20 @@ export default function ChatInterface({
       icon: "/ai-models/openai.svg",
     },
     {
-        name: "GPT-4o",
-        id: "gpt-4o",
-        icon: "/ai-models/openai.svg",
-      },
+      name: "GPT-4o",
+      id: "gpt-4o",
+      icon: "/ai-models/openai.svg",
+    },
     {
       name: "o3-mini",
       id: "o3-mini",
       icon: "/ai-models/openai.svg",
     },
     {
-        name: "Deepseek R1 Distilled",
-        id: "deepseek-r1-distill-llama-70b",
-        icon: "/ai-models/deepseek.png",
-      },
+      name: "Deepseek R1 Distilled",
+      id: "deepseek-r1-distill-llama-70b",
+      icon: "/ai-models/deepseek.png",
+    },
     {
       name: "Claude 3.5 Haiku",
       id: "claude-3-5-haiku",
@@ -96,15 +119,15 @@ export default function ChatInterface({
       icon: "/ai-models/anthropic.svg",
     },
     {
-        name: "Mixtral 8x7B",
-        id: "mixtral-8x7b-32768",
-        icon: "/ai-models/mistral.svg",
-      },
+      name: "Mixtral 8x7B",
+      id: "mixtral-8x7b-32768",
+      icon: "/ai-models/mistral.svg",
+    },
     {
-        name: "Llama 3.3 70B",
-        id: "llama-3.3-70b-versatile	",
-        icon: "/ai-models/meta.svg",
-      },
+      name: "Llama 3.3 70B",
+      id: "llama-3.3-70b-versatile	",
+      icon: "/ai-models/meta.svg",
+    },
     {
       name: "Gemini 2.0 Flash",
       id: "gemini-2.0-flash-exp",
@@ -133,63 +156,76 @@ export default function ChatInterface({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       // TODO: Add your submit logic here
-      console.log('Submitting message:', inputRef.current?.value);
+      console.log("Submitting message:", inputRef.current?.value);
     }
   };
 
   const handleFile = (file: File) => {
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    
-    if (file.type.startsWith('image/')) {
+    const fileExtension = file.name.split(".").pop()?.toLowerCase();
+
+    if (file.type.startsWith("image/")) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFilePreviews(prev => [...prev, {
-          url: reader.result as string,
-          type: 'image',
-          name: file.name
-        }]);
-        setSelectedImages(prev => [...prev, file]);
+        setFilePreviews((prev) => [
+          ...prev,
+          {
+            url: reader.result as string,
+            type: "image",
+            name: file.name,
+          },
+        ]);
+        setSelectedImages((prev) => [...prev, file]);
       };
       reader.readAsDataURL(file);
-    } else if (file.type === 'application/pdf') {
-      setFilePreviews(prev => [...prev, {
-        url: URL.createObjectURL(file),
-        type: 'pdf',
-        name: file.name
-      }]);
-      setSelectedImages(prev => [...prev, file]);
+    } else if (file.type === "application/pdf") {
+      setFilePreviews((prev) => [
+        ...prev,
+        {
+          url: URL.createObjectURL(file),
+          type: "pdf",
+          name: file.name,
+        },
+      ]);
+      setSelectedImages((prev) => [...prev, file]);
     } else if (
-      file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-      file.type === 'application/vnd.ms-excel' ||
-      fileExtension === 'xlsx' ||
-      fileExtension === 'xls'
+      file.type ===
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+      file.type === "application/vnd.ms-excel" ||
+      fileExtension === "xlsx" ||
+      fileExtension === "xls"
     ) {
-      setFilePreviews(prev => [...prev, {
-        url: '/placeholders/excel.png',
-        type: 'xlsx',
-        name: file.name
-      }]);
-      setSelectedImages(prev => [...prev, file]);
+      setFilePreviews((prev) => [
+        ...prev,
+        {
+          url: "/placeholders/excel.png",
+          type: "xlsx",
+          name: file.name,
+        },
+      ]);
+      setSelectedImages((prev) => [...prev, file]);
     } else {
-      setFilePreviews(prev => [...prev, {
-        url: '',
-        type: 'other',
-        name: file.name,
-        fileType: fileExtension?.toUpperCase() || 'FILE'
-      }]);
-      setSelectedImages(prev => [...prev, file]);
+      setFilePreviews((prev) => [
+        ...prev,
+        {
+          url: "",
+          type: "other",
+          name: file.name,
+          fileType: fileExtension?.toUpperCase() || "FILE",
+        },
+      ]);
+      setSelectedImages((prev) => [...prev, file]);
     }
   };
 
   const onDrop = (acceptedFiles: File[]) => {
     const remainingSlots = 4 - filePreviews.length;
     const filesToAdd = acceptedFiles.slice(0, remainingSlots);
-    
+
     if (acceptedFiles.length > remainingSlots) {
-      toast.error('Maximum 4 files allowed');
+      toast.error("Maximum 4 files allowed");
     }
 
     filesToAdd.forEach(handleFile);
@@ -199,7 +235,7 @@ export default function ChatInterface({
     onDrop,
     accept: {
       ...ACCEPTED_IMAGE_TYPES,
-      ...ACCEPTED_DOCUMENT_TYPES
+      ...ACCEPTED_DOCUMENT_TYPES,
     },
     noClick: true,
     noKeyboard: true,
@@ -213,9 +249,15 @@ export default function ChatInterface({
         </h2>
       )}
 
-      <Card className={`dark:bg-[#18181B] ${isDragActive ? 'ring-2 ring-primary' : ''}`}>
-        <CardContent 
-          className="p-3.5 relative" 
+      <Card
+        className={`dark:bg-[#18181B] ${
+          isDragActive
+            ? "border border-dashed border-black dark:border-white"
+            : ""
+        }`}
+      >
+        <CardContent
+          className="p-3.5 relative"
           onClick={handleCardClick}
           {...getRootProps()}
         >
@@ -225,24 +267,27 @@ export default function ChatInterface({
             </div>
           )}
           <input {...getInputProps()} />
-          
+
           {filePreviews.length > 0 && (
             <div className="mb-3">
               <div className="flex gap-3">
                 {filePreviews.map((preview, index) => (
-                  <div key={index} className="relative inline-block w-[175px] h-[125px]">
-                    {preview.type === 'pdf' ? (
+                  <div
+                    key={index}
+                    className="relative inline-block w-[175px] h-[125px]"
+                  >
+                    {preview.type === "pdf" ? (
                       <div className="w-full h-full rounded-lg flex flex-col items-center justify-center overflow-hidden">
                         <iframe
                           src={`${preview.url}#toolbar=0&navpanes=0&scrollbar=0`}
                           className="w-full h-full bg-white scale-110"
-                          style={{ border: 'none' }}
+                          style={{ border: "none" }}
                         />
                         <div className="absolute bottom-2 left-2 bg-black/75 px-2 py-0.5 rounded text-xs text-white">
                           PDF
                         </div>
                       </div>
-                    ) : preview.type === 'xlsx' ? (
+                    ) : preview.type === "xlsx" ? (
                       <div className="w-full h-full rounded-lg flex flex-col items-center justify-center bg-emerald-500/10">
                         <Image
                           src="/placeholders/excel.png"
@@ -255,7 +300,7 @@ export default function ChatInterface({
                           XLSX
                         </div>
                       </div>
-                    ) : preview.type === 'image' ? (
+                    ) : preview.type === "image" ? (
                       <Image
                         src={preview.url}
                         alt={`Uploaded file ${index + 1}`}
@@ -276,11 +321,15 @@ export default function ChatInterface({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (preview.type === 'pdf') {
+                        if (preview.type === "pdf") {
                           URL.revokeObjectURL(preview.url);
                         }
-                        setSelectedImages(prev => prev.filter((_, i) => i !== index));
-                        setFilePreviews(prev => prev.filter((_, i) => i !== index));
+                        setSelectedImages((prev) =>
+                          prev.filter((_, i) => i !== index)
+                        );
+                        setFilePreviews((prev) =>
+                          prev.filter((_, i) => i !== index)
+                        );
                       }}
                       className="absolute -top-2 -right-2 p-1 bg-destructive rounded-full transition-colors z-10"
                     >
@@ -291,7 +340,7 @@ export default function ChatInterface({
               </div>
             </div>
           )}
-          
+
           <ScrollArea className="min-h-[35px] max-h-[80px] sm:max-h-[160px]">
             <Textarea
               ref={inputRef}
@@ -322,17 +371,20 @@ export default function ChatInterface({
                   side={isMobile ? "top" : "bottom"}
                   align="start"
                 >
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     className="p-2.5 cursor-pointer rounded-xl"
                     onSelect={(e) => {
                       e.preventDefault();
                       if (selectedImages.length >= 4) {
-                        toast.error('Maximum 4 files allowed');
+                        toast.error("Maximum 4 files allowed");
                         return;
                       }
-                      const input = document.createElement('input');
-                      input.type = 'file';
-                      input.accept = Object.keys({...ACCEPTED_IMAGE_TYPES, ...ACCEPTED_DOCUMENT_TYPES}).join(',');
+                      const input = document.createElement("input");
+                      input.type = "file";
+                      input.accept = Object.keys({
+                        ...ACCEPTED_IMAGE_TYPES,
+                        ...ACCEPTED_DOCUMENT_TYPES,
+                      }).join(",");
                       input.onchange = (e) => {
                         const file = (e.target as HTMLInputElement).files?.[0];
                         if (file) {
@@ -357,15 +409,19 @@ export default function ChatInterface({
                       className="text-gray-600 h-8 hover:text-gray-700 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px] rounded-full shrink-0 text-xs px-3 py-1 inline-flex items-center gap-1.5"
                     >
                       <Image
-                        src={models.find(m => m.id === model)?.icon || ''}
+                        src={models.find((m) => m.id === model)?.icon || ""}
                         alt="Model icon"
                         width={15}
                         height={15}
                         className={`${
-                          models.find(m => m.id === model)?.icon.includes('openai') || 
-                          models.find(m => m.id === model)?.icon.includes('anthropic')
-                            ? 'dark:invert'
-                            : ''
+                          models
+                            .find((m) => m.id === model)
+                            ?.icon.includes("openai") ||
+                          models
+                            .find((m) => m.id === model)
+                            ?.icon.includes("anthropic")
+                            ? "dark:invert"
+                            : ""
                         }`}
                       />
                       Models
@@ -388,9 +444,10 @@ export default function ChatInterface({
                           width={18}
                           height={18}
                           className={`mr-1 ${
-                            m.icon.includes('openai') || m.icon.includes('anthropic') 
-                              ? 'dark:invert' 
-                              : ''
+                            m.icon.includes("openai") ||
+                            m.icon.includes("anthropic")
+                              ? "dark:invert"
+                              : ""
                           }`}
                         />
                         {m.name}
@@ -403,7 +460,7 @@ export default function ChatInterface({
 
               <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
-                <Button
+                  <Button
                     variant="outline"
                     size="icon"
                     className="rounded-full size-8 shrink-0 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px]"
@@ -419,19 +476,22 @@ export default function ChatInterface({
 
               <div className="flex-1" />
 
-                  <Button
-                    size="icon"
-                    className="rounded-full size-9 bg-black hover:bg-black/90 dark:bg-white dark:hover:bg-white/90 shrink-0"
-                  >
-                    <SendHorizonalIcon className="size-4 text-white dark:text-black" />
-                    <span className="sr-only">Send</span>
-                  </Button>
+              <Button
+                size="icon"
+                className="rounded-full size-9 bg-black hover:bg-black/90 dark:bg-white dark:hover:bg-white/90 shrink-0"
+              >
+                <SendHorizonalIcon className="size-4 text-white dark:text-black" />
+                <span className="sr-only">Send</span>
+              </Button>
             </TooltipProvider>
           </div>
         </CardContent>
       </Card>
 
-      <p className="text-xs text-center text-muted-foreground" draggable={false}>
+      <p
+        className="text-xs text-center text-muted-foreground"
+        draggable={false}
+      >
         AI models can make mistakes. Check important info.
       </p>
     </div>
