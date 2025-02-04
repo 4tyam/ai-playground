@@ -3,7 +3,13 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import type { ComponentPropsWithoutRef } from "react";
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Check, Copy } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 interface CodeProps extends ComponentPropsWithoutRef<"code"> {
   inline?: boolean;
@@ -54,6 +60,77 @@ export default function FormattedMessage({ content }: { content: string }) {
     });
   };
 
+  const CodeBlock = ({
+    language,
+    content,
+  }: {
+    language: string;
+    content: string;
+  }) => {
+    const [copied, setCopied] = useState(false);
+
+    const copyToClipboard = async () => {
+      try {
+        await navigator.clipboard.writeText(content);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error("Failed to copy text: ", err);
+      }
+    };
+
+    return (
+      <div className="not-prose relative my-3 pb-8 last:mb-0">
+        <div className="rounded-t-md overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 bg-zinc-800/90 text-zinc-400 text-xs">
+            <span className="font-medium">{language}</span>
+            <TooltipProvider>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={copyToClipboard}
+                    className="flex items-center gap-1 hover:text-zinc-200 transition-colors"
+                  >
+                    {copied ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Copy to clipboard</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+        <div className="rounded-b-md overflow-hidden bg-[#282c34]">
+          <SyntaxHighlighter
+            style={oneDark}
+            language={language}
+            PreTag="div"
+            customStyle={{
+              margin: 0,
+              background: "transparent",
+              padding: "0.75rem 1rem",
+              fontSize: "0.875rem",
+              lineHeight: "1.5",
+            }}
+            codeTagProps={{
+              style: {
+                fontSize: "inherit",
+                lineHeight: "inherit",
+              },
+            }}
+          >
+            {content}
+          </SyntaxHighlighter>
+        </div>
+      </div>
+    );
+  };
+
   const components: Components = {
     p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
     h1: ({ children }) => (
@@ -96,37 +173,7 @@ export default function FormattedMessage({ content }: { content: string }) {
 
       if (shouldBeCodeBlock) {
         const language = match ? match[1] : "typescript";
-        return (
-          <div className="not-prose relative my-3 last:mb-0">
-            <div className="rounded-t-md overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-1.5 bg-zinc-800/90 text-zinc-400 text-xs">
-                <span className="font-medium">{language}</span>
-              </div>
-            </div>
-            <div className="rounded-b-md overflow-hidden bg-[#282c34]">
-              <SyntaxHighlighter
-                style={oneDark}
-                language={language}
-                PreTag="div"
-                customStyle={{
-                  margin: 0,
-                  background: "transparent",
-                  padding: "0.75rem 1rem",
-                  fontSize: "0.875rem",
-                  lineHeight: "1.5",
-                }}
-                codeTagProps={{
-                  style: {
-                    fontSize: "inherit",
-                    lineHeight: "inherit",
-                  },
-                }}
-              >
-                {content}
-              </SyntaxHighlighter>
-            </div>
-          </div>
-        );
+        return <CodeBlock language={language} content={content} />;
       }
 
       return (
