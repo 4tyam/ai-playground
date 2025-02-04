@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/auth";
 import { db } from "../../../../../../db";
-import { messages, users } from "../../../../../../db/schema";
+import { chats, messages } from "../../../../../../db/schema";
 import { eq } from "drizzle-orm";
 
 export const GET = async (
@@ -23,8 +23,10 @@ export const GET = async (
         content: messages.content,
         role: messages.role,
         sentAt: messages.sentAt,
+        model: chats.model,
       })
       .from(messages)
+      .innerJoin(chats, eq(messages.chatId, chats.id))
       .where(eq(messages.chatId, chatId))
       .orderBy(messages.sentAt);
 

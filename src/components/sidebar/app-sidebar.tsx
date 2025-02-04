@@ -1,5 +1,7 @@
-import * as React from "react";
+"use client";
 
+import * as React from "react";
+import { VList } from "virtua";
 import {
   Sidebar,
   SidebarContent,
@@ -12,36 +14,82 @@ import {
 import SidebarTopNav from "./sidebar-top-nav";
 import ChatSidebar from "../chat-sidebar";
 import { getChats } from "@/lib/actions";
+import { Loader2Icon } from "lucide-react";
 
-export async function AppSidebar({
-  ...props
-}: React.ComponentProps<typeof Sidebar>) {
-  const chats = await getChats();
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const [chats, setChats] = React.useState<
+    Array<{
+      id: string;
+      model: string;
+      title: string | null;
+      createdAt: Date;
+    }>
+  >([]);
+  const [page, setPage] = React.useState(1);
+  const [hasMore, setHasMore] = React.useState(true);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const loadMoreChats = React.useCallback(async () => {
+    if (isLoading || !hasMore) return;
+
+    setIsLoading(true);
+    try {
+      const result = await getChats(page);
+      setChats((prevChats) => [...prevChats, ...result.chats]);
+      setHasMore(result.hasMore);
+      setPage((p) => p + 1);
+    } catch (error) {
+      console.error("Error loading chats:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [page, isLoading, hasMore]);
+
+  // Initial load
+  React.useEffect(() => {
+    loadMoreChats();
+  }, []);
+
+  // Memoize chat items to reduce re-renders
+  const chatItems = React.useMemo(() => {
+    return chats.map((chat) => (
+      <ChatSidebar
+        key={chat.id}
+        chatId={chat.id}
+        modelId={chat.model}
+        chatTitle={chat.title ?? "Untitled Chat"}
+      />
+    ));
+  }, [chats]);
 
   return (
-    <Sidebar {...props}>
-      <SidebarHeader>
+    <Sidebar className="border-none" {...props}>
+      <SidebarHeader className="border-none">
         <SidebarTopNav />
       </SidebarHeader>
       <SidebarContent>
-        {/* Chat list section */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Recent Chats</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <div className="flex flex-col gap-1">
-              {chats.map((chat) => (
-                <ChatSidebar
-                  key={chat.id}
-                  chatId={chat.id}
-                  modelId={chat.model}
-                  chatTitle={chat.title ?? "Untitled Chat"}
-                />
-              ))}
-            </div>
+        <SidebarGroup className="h-full">
+          <SidebarGroupLabel className="text-muted-foreground/70">
+            Recent Chats
+          </SidebarGroupLabel>
+          <SidebarGroupContent className="h-[calc(100vh-120px)]">
+            <VList
+              className="flex flex-col gap-1 h-full [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 light:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent"
+              overscan={20}
+              onScrollEnd={hasMore ? loadMoreChats : undefined}
+              itemSize={56}
+            >
+              {chatItems}
+              {isLoading && (
+                <div className="py-4 flex items-center justify-center pt-14 text-muted-foreground/50">
+                  <Loader2Icon className="size-6 animate-spin" />
+                </div>
+              )}
+            </VList>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarRail />
+      <SidebarRail className="border-none pointer-events-none" />
     </Sidebar>
   );
 }

@@ -15,6 +15,7 @@ type Message = {
 
 const ChatIdPage = ({ params }: { params: Promise<{ chatId: string }> }) => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [model, setModel] = useState<string>("");
   const { chatId } = use(params);
 
   useEffect(() => {
@@ -25,6 +26,10 @@ const ChatIdPage = ({ params }: { params: Promise<{ chatId: string }> }) => {
         if (!response.ok) throw new Error("Failed to fetch messages");
         const data = await response.json();
         setMessages(data.chatMessages);
+        // Get model from the first message since it's included in each message
+        if (data.chatMessages.length > 0) {
+          setModel(data.chatMessages[0].model);
+        }
       } catch (error) {
         console.error("Error fetching messages:", error);
       }
@@ -72,11 +77,11 @@ const ChatIdPage = ({ params }: { params: Promise<{ chatId: string }> }) => {
 
   return (
     <main className="h-[calc(100vh-80px)] -m-4 relative">
-      <div className="absolute inset-0 overflow-y-auto px-4 pb-[140px]">
-        <ChatMessages messages={messages} model="gpt-4o-mini" />
+      <div className="absolute inset-0 overflow-y-auto pb-[140px] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 light:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent">
+        <ChatMessages messages={messages} model={model} />
       </div>
       <div className="absolute bottom-0 left-0 right-0 bg-background">
-        <div className="w-full max-w-3xl mx-auto px-4">
+        <div className="w-full max-w-4xl mx-auto px-4 md:px-12 lg:px-24">
           <ChatBar
             titleShown={false}
             modelsReadOnly={true}

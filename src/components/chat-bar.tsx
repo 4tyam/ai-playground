@@ -29,6 +29,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
 import { useRouter } from "next/navigation";
+import { useChat } from "ai/react";
+import { models } from "@/lib/models";
 
 type FilePreview = {
   url: string;
@@ -72,6 +74,12 @@ export default function ChatBar({
   const isMobile = useIsMobile();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
+  const {
+    input,
+    handleInputChange,
+    handleSubmit: aiHandleSubmit,
+    setInput,
+  } = useChat();
 
   // Add mounted state
   const [mounted, setMounted] = useState(false);
@@ -102,54 +110,6 @@ export default function ChatBar({
   const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const models = [
-    {
-      name: "GPT-4o mini",
-      id: "gpt-4o-mini",
-      icon: "/ai-models/openai.svg",
-    },
-    {
-      name: "GPT-4o",
-      id: "gpt-4o",
-      icon: "/ai-models/openai.svg",
-    },
-    {
-      name: "o3-mini",
-      id: "o3-mini",
-      icon: "/ai-models/openai.svg",
-    },
-    {
-      name: "Deepseek R1 Distilled",
-      id: "deepseek-r1-distill-llama-70b",
-      icon: "/ai-models/deepseek.png",
-    },
-    {
-      name: "Claude 3.5 Haiku",
-      id: "claude-3-5-haiku",
-      icon: "/ai-models/anthropic.svg",
-    },
-    {
-      name: "Claude 3.5 Sonnet",
-      id: "claude-3-5-sonnet",
-      icon: "/ai-models/anthropic.svg",
-    },
-    {
-      name: "Mixtral 8x7B",
-      id: "mixtral-8x7b-32768",
-      icon: "/ai-models/mistral.svg",
-    },
-    {
-      name: "Llama 3.3 70B",
-      id: "llama-3.3-70b-versatile	",
-      icon: "/ai-models/meta.svg",
-    },
-    {
-      name: "Gemini 2.0 Flash",
-      id: "gemini-2.0-flash-exp",
-      icon: "/ai-models/googlegemini.svg",
-    },
-  ];
-
   const getModelName = (modelId: string) => {
     return models.find((m) => m.id === modelId)?.name || modelId;
   };
@@ -173,7 +133,10 @@ export default function ChatBar({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      const form = e.currentTarget.form;
+      if (form) {
+        form.requestSubmit();
+      }
     }
   };
 
@@ -255,19 +218,20 @@ export default function ChatBar({
     noKeyboard: true,
   });
 
-  const handleSend = async () => {
-    if (!inputRef.current?.value.trim() || isLoading) return;
-    const userMessage = inputRef.current.value;
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
 
-    // Clear input immediately
-    if (inputRef.current) {
-      inputRef.current.value = "";
-      inputRef.current.style.height = "auto";
+    const currentMessage = input.trim();
+    const currentModel = models.find((m) => m.id === model);
+
+    if (!currentModel) {
+      toast.error("Invalid model selected");
+      return;
     }
 
-    // Send optimistic user message update immediately
-    onMessageSent?.(userMessage, "", false);
-
+    setInput("");
+    onMessageSent?.(currentMessage, "", false);
     setIsLoading(true);
 
     try {
@@ -277,9 +241,11 @@ export default function ChatBar({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          prompt: userMessage,
+          messages: [{ role: "user", content: currentMessage }],
+          prompt: currentMessage,
           chatId: params?.chatId,
-          model: model,
+          model: currentModel.id,
+          provider: currentModel.provider,
         }),
       });
 
@@ -290,7 +256,7 @@ export default function ChatBar({
       const data = await response.json();
 
       // Update with AI response
-      onMessageSent?.(userMessage, data.message, true);
+      onMessageSent?.(currentMessage, data.message, true);
 
       // Only redirect if we're creating a new chat (no params passed)
       if (!params?.chatId && data.chatId) {
@@ -299,8 +265,17 @@ export default function ChatBar({
     } catch (error) {
       toast.error("Failed to send message");
       console.error(error);
+      // Optionally restore the input if the request failed
+      setInput(currentMessage);
     } finally {
       setIsLoading(false);
+    }
+
+    // Then trigger the AI chat handler
+    try {
+      await aiHandleSubmit(e);
+    } catch (error) {
+      console.error("AI handler error:", error);
     }
   };
 
@@ -404,152 +379,162 @@ export default function ChatBar({
             </div>
           )}
 
-          <ScrollArea className="min-h-[35px] max-h-[80px] sm:max-h-[160px]">
-            <Textarea
-              ref={inputRef}
-              placeholder={`Message ${getModelName(model)}`}
-              className="border-none p-0 min-h-[24px] w-full placeholder:text-sm text-sm placeholder:text-muted-foreground/70 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-              onInput={handleTextareaInput}
-              onKeyDown={handleKeyDown}
-              wrap="soft"
-              rows={1}
-            />
-          </ScrollArea>
+          <form onSubmit={handleFormSubmit}>
+            <ScrollArea className="min-h-[35px] max-h-[80px] sm:max-h-[160px]">
+              <Textarea
+                ref={inputRef}
+                value={input}
+                onChange={handleInputChange}
+                placeholder={`Message ${getModelName(model)}`}
+                className="border-none p-0 min-h-[24px] w-full placeholder:text-sm text-sm placeholder:text-muted-foreground/70 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                onInput={handleTextareaInput}
+                onKeyDown={handleKeyDown}
+                wrap="soft"
+                rows={1}
+              />
+            </ScrollArea>
 
-          <div className="flex items-center gap-1.5 mt-3">
-            <TooltipProvider>
-              <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="rounded-full size-8 shrink-0 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px]"
-                  >
-                    <Plus className="size-3" />
-                    <span className="sr-only">Add</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-[200px] rounded-xl"
-                  side={isMobile ? "top" : "bottom"}
-                  align="start"
+            <div className="flex items-center gap-1.5 mt-3">
+              <TooltipProvider>
+                <DropdownMenu
+                  open={dropdownOpen}
+                  onOpenChange={setDropdownOpen}
                 >
-                  <DropdownMenuItem
-                    className="p-2.5 cursor-pointer rounded-xl"
-                    onSelect={(e) => {
-                      e.preventDefault();
-                      if (selectedImages.length >= 4) {
-                        toast.error("Maximum 4 files allowed");
-                        return;
-                      }
-                      const input = document.createElement("input");
-                      input.type = "file";
-                      input.accept = Object.keys({
-                        ...ACCEPTED_IMAGE_TYPES,
-                        ...ACCEPTED_DOCUMENT_TYPES,
-                      }).join(",");
-                      input.onchange = (e) => {
-                        const file = (e.target as HTMLInputElement).files?.[0];
-                        if (file) {
-                          handleFile(file);
-                          setDropdownOpen(false);
-                        }
-                      };
-                      input.click();
-                    }}
-                  >
-                    <FileIcon className="mr-0.5 h-4 w-4" />
-                    Upload files
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="text-gray-600 h-8 hover:text-gray-700 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px] rounded-full shrink-0 text-xs px-3 py-1 inline-flex items-center gap-1.5"
-                    disabled={modelsReadOnly}
-                  >
-                    <Image
-                      src={models.find((m) => m.id === model)?.icon || ""}
-                      alt="Model icon"
-                      width={15}
-                      height={15}
-                      draggable={false}
-                      className={`${
-                        models
-                          .find((m) => m.id === model)
-                          ?.icon.includes("openai") ||
-                        models
-                          .find((m) => m.id === model)
-                          ?.icon.includes("anthropic")
-                          ? "dark:invert"
-                          : ""
-                      }`}
-                    />
-                    {!modelsReadOnly && "Models"}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-[200px] rounded-xl"
-                  align="start"
-                  side={isMobile ? "top" : "right"}
-                >
-                  {models.map((m) => (
-                    <DropdownMenuItem
-                      key={m.id}
-                      className="p-2.5 cursor-pointer rounded-xl flex items-center"
-                      onClick={() => setModel(m.id)}
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="rounded-full size-8 shrink-0 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px]"
                     >
-                      <Image
-                        src={m.icon}
-                        alt={m.name}
-                        width={18}
-                        height={18}
-                        className={`mr-1 ${
-                          m.icon.includes("openai") ||
-                          m.icon.includes("anthropic")
-                            ? "dark:invert"
-                            : ""
-                        }`}
-                      />
-                      {m.name}
-                      {model === m.id && <span className="ml-auto">✓</span>}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <Tooltip delayDuration={200}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="rounded-full size-8 shrink-0 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px]"
+                      <Plus className="size-3" />
+                      <span className="sr-only">Add</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    className="w-[200px] rounded-xl"
+                    side={isMobile ? "top" : "bottom"}
+                    align="start"
                   >
-                    <MicIcon className="size-3" />
-                    <span className="sr-only">Voice input</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>Voice input</p>
-                </TooltipContent>
-              </Tooltip>
+                    <DropdownMenuItem
+                      className="p-2.5 cursor-pointer rounded-xl"
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        if (selectedImages.length >= 4) {
+                          toast.error("Maximum 4 files allowed");
+                          return;
+                        }
+                        const input = document.createElement("input");
+                        input.type = "file";
+                        input.accept = Object.keys({
+                          ...ACCEPTED_IMAGE_TYPES,
+                          ...ACCEPTED_DOCUMENT_TYPES,
+                        }).join(",");
+                        input.onchange = (e) => {
+                          const file = (e.target as HTMLInputElement)
+                            .files?.[0];
+                          if (file) {
+                            handleFile(file);
+                            setDropdownOpen(false);
+                          }
+                        };
+                        input.click();
+                      }}
+                    >
+                      <FileIcon className="mr-0.5 h-4 w-4" />
+                      Upload files
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-              <div className="flex-1" />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="text-gray-600 h-8 hover:text-gray-700 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px] rounded-full shrink-0 text-xs px-3 py-1 inline-flex items-center gap-1.5"
+                      disabled={modelsReadOnly}
+                    >
+                      {models.find((m) => m.id === model)?.icon && (
+                        <Image
+                          src={models.find((m) => m.id === model)!.icon}
+                          alt="Model icon"
+                          width={15}
+                          height={15}
+                          draggable={false}
+                          className={`${
+                            models
+                              .find((m) => m.id === model)
+                              ?.icon.includes("openai") ||
+                            models
+                              .find((m) => m.id === model)
+                              ?.icon.includes("anthropic")
+                              ? "dark:invert"
+                              : ""
+                          }`}
+                        />
+                      )}
+                      {!modelsReadOnly && "Models"}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    className="w-[200px] rounded-xl"
+                    align="start"
+                    side={isMobile ? "top" : "right"}
+                  >
+                    {models.map((m) => (
+                      <DropdownMenuItem
+                        key={m.id}
+                        className="p-2.5 cursor-pointer rounded-xl flex items-center"
+                        onClick={() => setModel(m.id)}
+                      >
+                        <Image
+                          src={m.icon}
+                          alt={m.name}
+                          width={18}
+                          height={18}
+                          className={`mr-1 ${
+                            m.icon.includes("openai") ||
+                            m.icon.includes("anthropic")
+                              ? "dark:invert"
+                              : ""
+                          }`}
+                        />
+                        {m.name}
+                        {model === m.id && <span className="ml-auto">✓</span>}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-              <Button
-                size="icon"
-                className="rounded-full size-9 bg-black hover:bg-black/90 dark:bg-white dark:hover:bg-white/90 shrink-0"
-                onClick={handleSend}
-                disabled={isLoading}
-              >
-                <SendHorizonalIcon className="size-4 text-white dark:text-black" />
-                <span className="sr-only">Send</span>
-              </Button>
-            </TooltipProvider>
-          </div>
+                <Tooltip delayDuration={200}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="rounded-full size-8 shrink-0 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px]"
+                    >
+                      <MicIcon className="size-3" />
+                      <span className="sr-only">Voice input</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>Voice input</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <div className="flex-1" />
+
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="rounded-full size-9 bg-black hover:bg-black/90 dark:bg-white dark:hover:bg-white/90 shrink-0"
+                  disabled={isLoading}
+                >
+                  <SendHorizonalIcon className="size-4 text-white dark:text-black" />
+                  <span className="sr-only">Send</span>
+                </Button>
+              </TooltipProvider>
+            </div>
+          </form>
         </CardContent>
       </Card>
 

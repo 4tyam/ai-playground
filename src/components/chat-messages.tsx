@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { models } from "@/lib/models";
 
 type Message = {
   id: string;
@@ -33,12 +34,12 @@ export default function ChatMessages({
   }, [messages, onMessagesUpdate]);
 
   return (
-    <div className="space-y-4 px-4 sm:px-48 pb-4">
+    <div className="space-y-4 px-4 md:px-12 lg:px-24 xl:px-48 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 light:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent">
       {messages.map((message) => (
         <div
           key={message.id}
           className={cn(
-            "flex w-full px-0 sm:px-4 py-1",
+            "flex w-full px-0 sm:px-4",
             message.role === "user" && "flex-row-reverse"
           )}
         >
@@ -49,17 +50,21 @@ export default function ChatMessages({
             ) : (
               <div className="flex size-8 shrink-0 select-none items-center justify-center rounded-full border bg-background shadow-sm mt-1">
                 <Image
-                  src={`/ai-models/${
-                    model.includes("gpt") ? "openai.svg" : "anthropic.svg"
-                  }`}
-                  draggable={false}
-                  alt="AI"
+                  src={models.find((m) => m.id === model)!.icon}
+                  alt={models.find((m) => m.id === model)!.name}
                   width={16}
                   height={16}
-                  className={cn(
-                    "size-4",
-                    model.includes("gpt") && "dark:invert"
-                  )}
+                  draggable={false}
+                  className={`${
+                    models
+                      .find((m) => m.id === model)
+                      ?.icon.includes("openai") ||
+                    models
+                      .find((m) => m.id === model)
+                      ?.icon.includes("anthropic")
+                      ? "dark:invert"
+                      : ""
+                  }`}
                 />
               </div>
             )}

@@ -1,10 +1,19 @@
 import { generateText } from "ai"
 import { openai } from "@ai-sdk/openai"
+import { anthropic } from "@ai-sdk/anthropic"
 import { NextResponse } from "next/server";
 import { auth } from "@/app/auth";
 import { db } from "../../../../db";
-import { chats, messages } from "../../../../db/schema";
+import { chats, messages as messagesTable } from "../../../../db/schema";
 import { eq, and } from "drizzle-orm";
+
+// Add Message type
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+type Provider = "openai" | "anthropic" | "deepseek" | "mistral" | "meta" | "google";
 
 export const POST = async (req: Request) => {
   const session = await auth();
@@ -13,13 +22,53 @@ export const POST = async (req: Request) => {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  const { prompt, chatId, model } = await req.json();
+  const { prompt, chatId, model: requestModel, provider, messages } = await req.json();
+
+  // Ensure we have a valid message content and model
+  const messageContent = prompt || messages?.[0]?.content;
+  
+  if (!messageContent) {
+    return new NextResponse("Message content is required", { status: 400 });
+  }
+
+  if (!requestModel || !provider) {
+    return new NextResponse("Model and provider are required", { status: 400 });
+  }
 
   try {
-    // Generate AI response
+    // If we have a chatId, get previous messages for context
+    let messageHistory: Message[] = [];
+    if (chatId) {
+      const previousMessages = await db
+        .select({
+          role: messagesTable.role,
+          content: messagesTable.content,
+        })
+        .from(messagesTable)
+        .where(eq(messagesTable.chatId, chatId))
+        .orderBy(messagesTable.sentAt);
+
+      messageHistory = previousMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+    }
+
+    // Generate AI response with context based on provider
     const { text } = await generateText({
-      model: openai(model || "gpt-4o-mini"),
-      prompt: prompt,
+      model: (() => {
+        if (provider === "anthropic") {
+          return anthropic(requestModel);
+        } else if (provider === "openai") {
+          return openai(requestModel);
+        } else {
+          throw new Error(`Unsupported provider: ${provider}`);
+        }
+      })(),
+      messages: [
+        ...messageHistory,
+        { role: "user", content: messageContent }
+      ]
     });
 
     let currentChatId = chatId;
@@ -46,8 +95,8 @@ export const POST = async (req: Request) => {
         .insert(chats)
         .values({
           userId: session.user.id as string,
-          model: model || "gpt-4o-mini",
-          title: prompt.slice(0, 100), // Use first 100 chars of prompt as title
+          model: requestModel,
+          title: messageContent.slice(0, 100),
         })
         .returning({ id: chats.id });
       
@@ -55,15 +104,15 @@ export const POST = async (req: Request) => {
     }
 
     // Insert user message
-    await db.insert(messages).values({
+    await db.insert(messagesTable).values({
       chatId: currentChatId,
       senderId: session.user.id as string,
-      content: prompt,
+      content: messageContent,
       role: "user",
     });
 
     // Insert AI response
-    await db.insert(messages).values({
+    await db.insert(messagesTable).values({
       chatId: currentChatId,
       senderId: session.user.id as string,
       content: text,
@@ -79,3 +128,24 @@ export const POST = async (req: Request) => {
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 };
+
+
+// import { openai } from '@ai-sdk/openai';
+// import { streamText } from 'ai';
+
+// // Allow streaming responses up to 30 seconds
+// export const maxDuration = 30;
+
+// export async function POST(req: Request) {
+//   const { messages } = await req.json();
+
+//   const result = streamText({
+//     model: openai('gpt-4o-mini'),
+//     messages,
+//     onFinish({ text }) {
+//       console.log(text);
+//     }
+//   });
+
+//   return result.toDataStreamResponse();
+// }
