@@ -11,6 +11,13 @@ import { auth } from "../auth";
 import { redirect } from "next/navigation";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Toaster } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { SidebarToggleText } from "@/components/sidebar-toggle-text";
 
 export default async function ChatLayout({
   children,
@@ -29,7 +36,22 @@ export default async function ChatLayout({
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center justify-between gap-2  px-4 pr-8">
           <div className="flex items-center gap-2">
-            <SidebarTrigger className="-ml-1" />
+            <TooltipProvider>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <SidebarTrigger className="-ml-1" />
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <div className="flex flex-col items-center">
+                    <SidebarToggleText />
+                    <div className="flex items-center text-sm text-gray-500 gap-0.5">
+                      <span>⌘</span>
+                      <span>B</span>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             {/* <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb className="text-sm sm:text-base">
             Data Fetching

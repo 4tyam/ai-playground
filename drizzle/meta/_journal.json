@@ -15,6 +15,13 @@
       "when": 1738429387291,
       "tag": "0001_vengeful_sharon_carter",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1738610162509,
+      "tag": "0002_outstanding_electro",
+      "breakpoints": true
     }
   ]
 }

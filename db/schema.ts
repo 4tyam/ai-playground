@@ -82,6 +82,7 @@ export const chats = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     title: text("title"),
+    model: text("model").notNull(),
     createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
   },
   (table) => [index("chat_user_id_idx").on(table.userId)]

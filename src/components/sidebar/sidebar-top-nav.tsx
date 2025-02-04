@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { SearchIcon, SquarePenIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,35 +11,51 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "@/components/ui/command"
+} from "@/components/ui/command";
 import { useEffect, useState } from "react";
 import { DialogDescription, DialogTitle } from "@radix-ui/react-dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../ui/tooltip";
 import { useRouter } from "next/navigation";
+import { useSidebar } from "../ui/sidebar";
+import Link from "next/link";
 
 function SidebarTopNav() {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
   const router = useRouter();
+  const { setOpenMobile } = useSidebar();
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setOpen((open) => !open)
+        e.preventDefault();
+        setOpen((open) => !open);
       }
-    }
-    document.addEventListener("keydown", down)
-    return () => document.removeEventListener("keydown", down)
-  }, [])
+      // if (e.key === "x" && (e.metaKey || e.ctrlKey)) {
+      //   e.preventDefault();
+      //   router.push("/chat");
+      // }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, [router]);
 
-  const ButtonWithTooltip = ({ icon, onClick, tooltipContent }: {
+  const ButtonWithTooltip = ({
+    icon,
+    onClick,
+    tooltipContent,
+  }: {
     icon: React.ReactNode;
     onClick?: () => void;
     tooltipContent: React.ReactNode;
   }) => {
     const button = (
-      <Button 
+      <Button
         variant="ghost"
         className="p-2 hover:bg-accent rounded-md"
         onClick={onClick}
@@ -53,12 +69,8 @@ function SidebarTopNav() {
     return (
       <TooltipProvider delayDuration={200}>
         <Tooltip>
-          <TooltipTrigger asChild>
-            {button}
-          </TooltipTrigger>
-          <TooltipContent>
-            {tooltipContent}
-          </TooltipContent>
+          <TooltipTrigger asChild>{button}</TooltipTrigger>
+          <TooltipContent>{tooltipContent}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
     );
@@ -68,32 +80,42 @@ function SidebarTopNav() {
     <>
       <div className="flex items-center justify-between pt-1.5 pl-2">
         <div>
-          <span className="text-lg font-bold text-black dark:text-white">ai playground</span>
+          <Link
+            href="/chat"
+            className="text-lg font-bold text-black dark:text-white"
+          >
+            ai playground
+          </Link>
         </div>
         <div className="flex items-center">
-          <ButtonWithTooltip 
-            icon={<SearchIcon className="size-[18px]"/>}
+          <ButtonWithTooltip
+            icon={<SearchIcon className="size-[18px]" />}
             onClick={() => setOpen(true)}
             tooltipContent={
               <div className="flex flex-col items-center">
                 Search chats
-                <div className="flex items-center text-sm text-gray-500/80 gap-0.5">
+                <div className="flex items-center text-sm text-gray-500 gap-0.5">
                   <span>⌘</span>
                   <span>K</span>
                 </div>
               </div>
             }
           />
-          
-          <ButtonWithTooltip 
-            icon={<SquarePenIcon className="size-[18px]"/>}
-            onClick={() => router.push('/chat')}
+
+          <ButtonWithTooltip
+            icon={<SquarePenIcon className="size-[18px]" />}
+            onClick={() => {
+              router.push("/chat");
+              if (isMobile) {
+                setOpenMobile(false);
+              }
+            }}
             tooltipContent={
               <div className="flex flex-col items-center">
                 New chat
-                {/* <div className="flex items-center text-sm text-gray-500/80 gap-0.5">
+                {/* <div className="flex items-center text-sm text-gray-500 gap-0.5">
                   <span>⌘</span>
-                  <span>N</span>
+                  <span>X</span>
                 </div> */}
               </div>
             }
@@ -123,7 +145,7 @@ function SidebarTopNav() {
         </CommandList>
       </CommandDialog>
     </>
-  )
+  );
 }
 
 export default SidebarTopNav;

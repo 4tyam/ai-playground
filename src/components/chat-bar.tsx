@@ -28,6 +28,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
+import { useRouter } from "next/navigation";
 
 type FilePreview = {
   url: string;
@@ -51,21 +52,35 @@ const ACCEPTED_DOCUMENT_TYPES = {
 
 const LOCAL_STORAGE_MODEL_KEY = "ai-playground:selected-model";
 
+type ChatBarProps = {
+  titleShown: boolean;
+  modelsReadOnly: boolean;
+  params?: { chatId?: string };
+  onMessageSent?: (
+    userMessage: string,
+    aiMessage: string,
+    isAIResponse?: boolean
+  ) => void;
+};
+
 export default function ChatBar({
   titleShown,
   modelsReadOnly,
-}: {
-  titleShown: boolean;
-  modelsReadOnly: boolean;
-}) {
+  params,
+  onMessageSent,
+}: ChatBarProps) {
   const isMobile = useIsMobile();
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const router = useRouter();
 
   // Add mounted state
   const [mounted, setMounted] = useState(false);
 
   // Initialize with default value only
   const [model, setModel] = useState("gpt-4o-mini");
+
+  // Add loading state
+  const [isLoading, setIsLoading] = useState(false);
 
   // Handle localStorage in a separate effect after mount
   useEffect(() => {
@@ -158,8 +173,7 @@ export default function ChatBar({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      // TODO: Add your submit logic here
-      console.log("Submitting message:", inputRef.current?.value);
+      handleSend();
     }
   };
 
@@ -240,6 +254,55 @@ export default function ChatBar({
     noClick: true,
     noKeyboard: true,
   });
+
+  const handleSend = async () => {
+    if (!inputRef.current?.value.trim() || isLoading) return;
+    const userMessage = inputRef.current.value;
+
+    // Clear input immediately
+    if (inputRef.current) {
+      inputRef.current.value = "";
+      inputRef.current.style.height = "auto";
+    }
+
+    // Send optimistic user message update immediately
+    onMessageSent?.(userMessage, "", false);
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt: userMessage,
+          chatId: params?.chatId,
+          model: model,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send message");
+      }
+
+      const data = await response.json();
+
+      // Update with AI response
+      onMessageSent?.(userMessage, data.message, true);
+
+      // Only redirect if we're creating a new chat (no params passed)
+      if (!params?.chatId && data.chatId) {
+        router.push(`/chat/${data.chatId}`);
+      }
+    } catch (error) {
+      toast.error("Failed to send message");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="w-full max-w-3xl mx-auto space-y-3">
@@ -479,6 +542,8 @@ export default function ChatBar({
               <Button
                 size="icon"
                 className="rounded-full size-9 bg-black hover:bg-black/90 dark:bg-white dark:hover:bg-white/90 shrink-0"
+                onClick={handleSend}
+                disabled={isLoading}
               >
                 <SendHorizonalIcon className="size-4 text-white dark:text-black" />
                 <span className="sr-only">Send</span>
