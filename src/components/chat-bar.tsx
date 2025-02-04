@@ -231,6 +231,10 @@ export default function ChatBar({
     }
 
     setInput("");
+    // Reset textarea height after clearing input
+    if (inputRef.current) {
+      inputRef.current.style.height = "auto";
+    }
     onMessageSent?.(currentMessage, "", false);
     setIsLoading(true);
 

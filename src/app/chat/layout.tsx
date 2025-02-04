@@ -36,22 +36,25 @@ export default async function ChatLayout({
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center justify-between gap-2  px-4 pr-8">
           <div className="flex items-center gap-2">
-            <TooltipProvider>
-              <Tooltip delayDuration={300}>
-                <TooltipTrigger asChild>
-                  <SidebarTrigger className="-ml-1" />
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <div className="flex flex-col items-center">
-                    <SidebarToggleText />
-                    <div className="flex items-center text-sm text-gray-500 gap-0.5">
-                      <span>⌘</span>
-                      <span>B</span>
+            <div className="sm:hidden">
+              <TooltipProvider>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <SidebarTrigger className="-ml-1" />
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <div className="flex flex-col items-center">
+                      <SidebarToggleText />
+                      <div className="flex items-center text-sm text-gray-500 gap-0.5">
+                        <span>⌘</span>
+                        <span>B</span>
+                      </div>
                     </div>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+
             {/* <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb className="text-sm sm:text-base">
             Data Fetching

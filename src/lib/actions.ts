@@ -2,10 +2,10 @@
 
 import { desc, eq } from "drizzle-orm";
 import { auth } from "@/app/auth";
-import { chats, messages } from "../../db/schema";
+import { chats } from "../../db/schema";
 import { db } from "../../db";
 
-export async function getChats(page: number = 1, limit: number = 25): Promise<{
+export async function getChats(page: number = 1, limit: number = 40): Promise<{
   chats: {
     id: string;
     model: string;

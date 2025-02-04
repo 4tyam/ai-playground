@@ -1,9 +1,7 @@
 export type Provider =
   | "openai"
   | "anthropic"
-  | "deepseek"
-  | "mistral"
-  | "meta"
+  | "groq"
   | "google";
 
 export type Model = {
@@ -27,8 +25,8 @@ export const models: Model[] = [
     provider: "openai",
   },
   {
-    name: "o3-mini",
-    id: "o3-mini",
+    name: "o1-mini",
+    id: "o1-mini",
     icon: "/ai-models/openai.svg",
     provider: "openai",
   },
@@ -36,7 +34,7 @@ export const models: Model[] = [
     name: "Deepseek R1 Distilled",
     id: "deepseek-r1-distill-llama-70b",
     icon: "/ai-models/deepseek.png",
-    provider: "deepseek",
+    provider: "groq",
   },
   {
     name: "Claude 3.5 Haiku",
@@ -54,13 +52,13 @@ export const models: Model[] = [
     name: "Mixtral 8x7B",
     id: "mixtral-8x7b-32768",
     icon: "/ai-models/mistral.svg",
-    provider: "mistral",
+    provider: "groq",
   },
   {
     name: "Llama 3.3 70B",
     id: "llama-3.3-70b-versatile",
     icon: "/ai-models/meta.svg",
-    provider: "meta",
+    provider: "groq",
   },
   {
     name: "Gemini 2.0 Flash",

@@ -1,6 +1,8 @@
 import { generateText } from "ai"
 import { openai } from "@ai-sdk/openai"
 import { anthropic } from "@ai-sdk/anthropic"
+import { groq } from "@ai-sdk/groq"
+import { google } from '@ai-sdk/google';
 import { NextResponse } from "next/server";
 import { auth } from "@/app/auth";
 import { db } from "../../../../db";
@@ -61,6 +63,10 @@ export const POST = async (req: Request) => {
           return anthropic(requestModel);
         } else if (provider === "openai") {
           return openai(requestModel);
+        } else if (provider === "groq") {
+          return groq(requestModel);
+        } else if (provider === "google") {
+          return google(requestModel);
         } else {
           throw new Error(`Unsupported provider: ${provider}`);
         }

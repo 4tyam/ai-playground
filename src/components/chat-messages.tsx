@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { models } from "@/lib/models";
+import FormattedMessage from "./formatted-message";
 
 type Message = {
   id: string;
@@ -78,9 +79,7 @@ export default function ChatMessages({
               message.pending && "opacity-50"
             )}
           >
-            <p className="whitespace-pre-wrap break-words text-[15px] leading-normal">
-              {message.content}
-            </p>
+            <FormattedMessage content={message.content} />
           </Card>
         </div>
       ))}
