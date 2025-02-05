@@ -6,6 +6,7 @@ import {
   SendHorizonalIcon,
   MicIcon,
   XIcon,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -52,12 +53,11 @@ const ACCEPTED_DOCUMENT_TYPES = {
   "text/plain": [],
 };
 
-const LOCAL_STORAGE_MODEL_KEY = "ai-playground:selected-model";
-
 type ChatBarProps = {
   titleShown: boolean;
   modelsReadOnly: boolean;
   params?: { chatId?: string };
+  selectedModel?: string;
   onMessageSent?: (
     userMessage: string,
     aiMessage: string,
@@ -69,36 +69,16 @@ export default function ChatBar({
   titleShown,
   modelsReadOnly,
   params,
+  selectedModel,
   onMessageSent,
 }: ChatBarProps) {
   const isMobile = useIsMobile();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
 
-  // Add mounted state
-  const [mounted, setMounted] = useState(false);
-
-  // Initialize with default value only
-  const [model, setModel] = useState("gpt-4o-mini");
-
-  // Add loading state
   const [isLoading, setIsLoading] = useState(false);
 
-  // Handle localStorage in a separate effect after mount
-  useEffect(() => {
-    setMounted(true);
-    const savedModel = localStorage.getItem(LOCAL_STORAGE_MODEL_KEY);
-    if (savedModel) {
-      setModel(savedModel);
-    }
-  }, []);
-
-  // Save to localStorage when model changes
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem(LOCAL_STORAGE_MODEL_KEY, model);
-    }
-  }, [model, mounted]);
+  const [model, setModel] = useState(selectedModel);
 
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
@@ -280,6 +260,47 @@ export default function ChatBar({
     }
   };
 
+  // Update model when selectedModel prop changes
+  useEffect(() => {
+    if (selectedModel) {
+      setModel(selectedModel);
+    }
+  }, [selectedModel]);
+
+  const renderModelButtonContent = () => {
+    const currentModel = models.find((m) => m.id === model);
+
+    if (!model) {
+      return (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="ml-0.5">Loading</span>
+        </>
+      );
+    }
+
+    return (
+      <>
+        {currentModel?.icon && (
+          <Image
+            src={currentModel.icon}
+            alt="Model icon"
+            width={15}
+            height={15}
+            draggable={false}
+            className={`${
+              currentModel.icon.includes("openai") ||
+              currentModel.icon.includes("anthropic")
+                ? "dark:invert"
+                : ""
+            }`}
+          />
+        )}
+        {!modelsReadOnly && "Models"}
+      </>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-2">
       {showMaxUsageDialog && (
@@ -289,7 +310,7 @@ export default function ChatBar({
       <div className="w-full max-w-3xl mx-auto space-y-3">
         {titleShown && (
           <h2 className="text-2xl sm:text-3xl font-semibold text-center tracking-tight fixed sm:static top-1/2 sm:top-auto sm:transform-none -translate-y-1/2 left-0 w-full sm:w-auto sm:mb-6">
-            Chat with {getModelName(model)}
+            Chat with {getModelName(model as string)}
           </h2>
         )}
 
@@ -391,7 +412,7 @@ export default function ChatBar({
                   ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder={`Message ${getModelName(model)}`}
+                  placeholder={`Message ${getModelName(model as string)}`}
                   className="border-none p-0 min-h-[24px] w-full placeholder:text-sm text-sm placeholder:text-muted-foreground/70 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
                   onInput={handleTextareaInput}
                   onKeyDown={handleKeyDown}
@@ -459,26 +480,7 @@ export default function ChatBar({
                         className="text-gray-600 h-8 hover:text-gray-700 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px] rounded-full shrink-0 text-xs px-3 py-1 inline-flex items-center gap-1.5"
                         disabled={modelsReadOnly}
                       >
-                        {models.find((m) => m.id === model)?.icon && (
-                          <Image
-                            src={models.find((m) => m.id === model)!.icon}
-                            alt="Model icon"
-                            width={15}
-                            height={15}
-                            draggable={false}
-                            className={`${
-                              models
-                                .find((m) => m.id === model)
-                                ?.icon.includes("openai") ||
-                              models
-                                .find((m) => m.id === model)
-                                ?.icon.includes("anthropic")
-                                ? "dark:invert"
-                                : ""
-                            }`}
-                          />
-                        )}
-                        {!modelsReadOnly && "Models"}
+                        {renderModelButtonContent()}
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent

@@ -86,6 +86,7 @@ const ChatIdPage = ({ params }: { params: Promise<{ chatId: string }> }) => {
             titleShown={false}
             modelsReadOnly={true}
             params={{ chatId }}
+            selectedModel={model}
             onMessageSent={handleMessageSent}
           />
         </div>

@@ -35,7 +35,7 @@ export default function ChatMessages({
   }, [messages, onMessagesUpdate]);
 
   return (
-    <div className="space-y-2 px-4 md:px-12 lg:px-24 xl:px-48 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 light:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent">
+    <div className="space-y-2.5 px-4 md:px-12 lg:px-24 xl:px-48 pt-3 pb-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 light:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent">
       {messages.map((message) => (
         <div
           key={message.id}
