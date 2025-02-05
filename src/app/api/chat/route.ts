@@ -6,8 +6,9 @@ import { google } from '@ai-sdk/google';
 import { NextResponse } from "next/server";
 import { auth } from "@/app/auth";
 import { db } from "../../../../db";
-import { chats, messages as messagesTable } from "../../../../db/schema";
-import { eq, and } from "drizzle-orm";
+import { users, usageLogs, chats, messages as messagesTable } from "../../../../db/schema";
+import { eq, and, desc } from "drizzle-orm";
+import { calculateCost } from "@/lib/pricing";
 
 // Add Message type
 type Message = {
@@ -15,13 +16,32 @@ type Message = {
   content: string;
 };
 
-type Provider = "openai" | "anthropic" | "deepseek" | "mistral" | "meta" | "google";
-
 export const POST = async (req: Request) => {
   const session = await auth();
   
   if (!session?.user) {
     return new NextResponse("Unauthorized", { status: 401 });
+  }
+
+  // Get user's current usage and limits
+  const userInfo = await db
+    .select({
+      usageAmount: users.usageAmount,
+      maxAmount: users.maxAmount
+    })
+    .from(users)
+    .where(eq(users.id, session.user.id as string))
+    .limit(1);
+
+  if (!userInfo.length) {
+    return new NextResponse("User not found", { status: 404 });
+  }
+
+  const { usageAmount, maxAmount } = userInfo[0];
+
+  // Check usage limit before processing anything
+  if (Number(usageAmount) >= Number(maxAmount)) {
+    return new NextResponse("Usage limit exceeded", { status: 403 });
   }
 
   const { prompt, chatId, model: requestModel, provider, messages } = await req.json();
@@ -48,16 +68,19 @@ export const POST = async (req: Request) => {
         })
         .from(messagesTable)
         .where(eq(messagesTable.chatId, chatId))
-        .orderBy(messagesTable.sentAt);
+        .orderBy(desc(messagesTable.sentAt)) // Get newest first
+        .limit(10); // Limit to last 10 messages
 
-      messageHistory = previousMessages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
+      messageHistory = previousMessages
+        .reverse() // Reverse to get correct chronological order
+        .map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
     }
 
     // Generate AI response with context based on provider
-    const { text } = await generateText({
+    const { text, usage } = await generateText({
       model: (() => {
         if (provider === "anthropic") {
           return anthropic(requestModel);
@@ -71,11 +94,24 @@ export const POST = async (req: Request) => {
           throw new Error(`Unsupported provider: ${provider}`);
         }
       })(),
+      maxTokens: 1400,
       messages: [
         ...messageHistory,
         { role: "user", content: messageContent }
       ]
     });
+
+    // Calculate cost of this request
+    const cost = calculateCost(
+      requestModel,
+      usage.promptTokens,
+      usage.completionTokens
+    );
+
+    // Check if this would exceed the user's limit
+    // if (Number(usageAmount) + Number(cost) > Number(maxAmount)) {
+    //   return new NextResponse("Usage limit exceeded", { status: 403 });
+    // }
 
     let currentChatId = chatId;
 
@@ -117,17 +153,42 @@ export const POST = async (req: Request) => {
       role: "user",
     });
 
-    // Insert AI response
-    await db.insert(messagesTable).values({
+    // Insert AI response and get its ID
+    const [assistantMessage] = await db.insert(messagesTable).values({
       chatId: currentChatId,
       senderId: session.user.id as string,
       content: text,
       role: "assistant", 
+    }).returning({ id: messagesTable.id });
+
+    // Update user's usage amount and create usage log
+    await db.transaction(async (tx) => {
+      // Update user's total usage
+      await tx
+        .update(users)
+        .set({ 
+          usageAmount: (Number(usageAmount) + Number(cost)).toFixed(20)
+        })
+        .where(eq(users.id, session?.user?.id as string));
+
+      // Create usage log entry
+      await tx.insert(usageLogs).values({
+        userId: session?.user?.id as string,
+        messageId: assistantMessage.id,  // Use the ID from the inserted message
+        model: requestModel,
+        promptTokens: usage.promptTokens,
+        completionTokens: usage.completionTokens,
+        totalCost: cost
+      });
     });
 
     return NextResponse.json({
       message: text,
       chatId: currentChatId,
+      usage: {
+        ...usage,
+        cost // Return the full precision cost
+      }
     });
   } catch (error) {
     console.error("Error in chat route:", error);

@@ -35,7 +35,7 @@ export default function ChatMessages({
   }, [messages, onMessagesUpdate]);
 
   return (
-    <div className="space-y-4 px-4 md:px-12 lg:px-24 xl:px-48 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 light:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent">
+    <div className="space-y-2 px-4 md:px-12 lg:px-24 xl:px-48 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 light:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent">
       {messages.map((message) => (
         <div
           key={message.id}
@@ -74,7 +74,7 @@ export default function ChatMessages({
           {/* Message */}
           <Card
             className={cn(
-              "flex min-h-[40px] py-2 px-3 sm:py-2 shadow-none border-none max-w-[85%]",
+              "flex min-h-[40px] py-2 px-3 sm:py-2.5 text-sm sm:text-base shadow-none border-none max-w-[85%]",
               message.role === "user" && "ml-auto bg-muted px-4 py-2.5",
               message.pending && "opacity-50"
             )}

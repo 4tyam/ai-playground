@@ -6,6 +6,7 @@ import {
   integer,
   pgEnum,
   index,
+  numeric,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
 
@@ -19,6 +20,8 @@ export const users = pgTable("user", {
   email: text("email").unique(),
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
+  usageAmount: numeric("usageAmount", { precision: 25, scale: 20 }).notNull().default("0"),
+  maxAmount: numeric("maxAmount", { precision: 25, scale: 20 }).notNull().default("0"),
 });
 
 export const accounts = pgTable(
@@ -107,3 +110,21 @@ export const messages = pgTable(
   },
   (table) => [index("message_chat_id_idx").on(table.chatId)]
 );
+
+// Add usage tracking table
+export const usageLogs = pgTable("usageLog", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  messageId: text("messageId")
+    .notNull()
+    .references(() => messages.id, { onDelete: "cascade" }),
+  model: text("model").notNull(),
+  promptTokens: integer("promptTokens").notNull(),
+  completionTokens: integer("completionTokens").notNull(),
+  totalCost: numeric("totalCost", { precision: 25, scale: 20 }).notNull(), // High precision cost
+  timestamp: timestamp("timestamp", { mode: "date" }).notNull().defaultNow(),
+});

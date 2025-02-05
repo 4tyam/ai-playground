@@ -80,7 +80,7 @@ export default function FormattedMessage({ content }: { content: string }) {
     };
 
     return (
-      <div className="not-prose relative my-3 pb-8 last:mb-0">
+      <div className="not-prose relative my-3 pb-4 last:mb-0">
         <div className="rounded-t-md overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 bg-zinc-800/90 text-zinc-400 text-xs">
             <span className="font-medium">{language}</span>
@@ -92,9 +92,15 @@ export default function FormattedMessage({ content }: { content: string }) {
                     className="flex items-center gap-1 hover:text-zinc-200 transition-colors"
                   >
                     {copied ? (
-                      <Check className="h-3.5 w-3.5" />
+                      <div className="flex items-center gap-1.5">
+                        <Check className="h-3.5 w-3.5" />
+                        Copied
+                      </div>
                     ) : (
-                      <Copy className="h-3.5 w-3.5" />
+                      <div className="flex items-center gap-1.5">
+                        <Copy className="h-3.5 w-3.5" />
+                        Copy
+                      </div>
                     )}
                   </button>
                 </TooltipTrigger>
@@ -172,7 +178,7 @@ export default function FormattedMessage({ content }: { content: string }) {
         !inline && (content.includes("\n") || content.length > 50 || match);
 
       if (shouldBeCodeBlock) {
-        const language = match ? match[1] : "typescript";
+        const language = match ? match[1] : "";
         return <CodeBlock language={language} content={content} />;
       }
 

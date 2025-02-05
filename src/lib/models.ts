@@ -55,6 +55,12 @@ export const models: Model[] = [
     provider: "groq",
   },
   {
+    name: "Llama 3.1 8B",
+    id: "llama-3.1-8b-instant",
+    icon: "/ai-models/meta.svg",
+    provider: "groq",
+  },
+  {
     name: "Llama 3.3 70B",
     id: "llama-3.3-70b-versatile",
     icon: "/ai-models/meta.svg",
