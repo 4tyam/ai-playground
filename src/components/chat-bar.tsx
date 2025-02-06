@@ -11,12 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useRef, useState, useEffect } from "react";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -432,111 +426,109 @@ export default function ChatBar({
               </ScrollArea>
 
               <div className="flex items-center gap-1.5 mt-3">
-                <TooltipProvider>
-                  <DropdownMenu
-                    open={dropdownOpen}
-                    onOpenChange={setDropdownOpen}
-                  >
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="rounded-full size-8 shrink-0 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px]"
-                      >
-                        <Plus className="size-3" />
-                        <span className="sr-only">Add</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      className="w-[200px] rounded-xl"
-                      side={isMobile ? "top" : "bottom"}
-                      align="start"
+                <DropdownMenu
+                  open={dropdownOpen}
+                  onOpenChange={setDropdownOpen}
+                >
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="rounded-full size-8 shrink-0 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px]"
                     >
-                      <DropdownMenuItem
-                        className="p-2.5 cursor-pointer rounded-xl"
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          if (selectedImages.length >= 4) {
-                            toast.error("Maximum 4 files allowed");
-                            return;
+                      <Plus className="size-3" />
+                      <span className="sr-only">Add</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    className="w-[200px] rounded-xl"
+                    side={isMobile ? "top" : "bottom"}
+                    align="start"
+                  >
+                    <DropdownMenuItem
+                      className="p-2.5 cursor-pointer rounded-xl"
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        if (selectedImages.length >= 4) {
+                          toast.error("Maximum 4 files allowed");
+                          return;
+                        }
+                        const input = document.createElement("input");
+                        input.type = "file";
+                        input.accept = Object.keys({
+                          ...ACCEPTED_IMAGE_TYPES,
+                          ...ACCEPTED_DOCUMENT_TYPES,
+                        }).join(",");
+                        input.onchange = (e) => {
+                          const file = (e.target as HTMLInputElement)
+                            .files?.[0];
+                          if (file) {
+                            handleFile(file);
+                            setDropdownOpen(false);
                           }
-                          const input = document.createElement("input");
-                          input.type = "file";
-                          input.accept = Object.keys({
-                            ...ACCEPTED_IMAGE_TYPES,
-                            ...ACCEPTED_DOCUMENT_TYPES,
-                          }).join(",");
-                          input.onchange = (e) => {
-                            const file = (e.target as HTMLInputElement)
-                              .files?.[0];
-                            if (file) {
-                              handleFile(file);
-                              setDropdownOpen(false);
-                            }
-                          };
-                          input.click();
-                        }}
-                      >
-                        <FileIcon className="mr-0.5 h-4 w-4" />
-                        Upload files
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="text-gray-600 h-8 hover:text-gray-700 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px] rounded-full shrink-0 text-xs px-3 py-1 inline-flex items-center gap-1.5"
-                        disabled={modelsReadOnly}
-                      >
-                        {renderModelButtonContent()}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      className="w-[200px] rounded-xl"
-                      align="start"
-                      side={isMobile ? "top" : "right"}
+                        };
+                        input.click();
+                      }}
                     >
-                      {models.map((m) => (
-                        <DropdownMenuItem
-                          key={m.id}
-                          className="p-2.5 cursor-pointer rounded-xl flex items-center"
-                          onClick={() => setModel(m.id)}
-                        >
-                          <Image
-                            src={m.icon}
-                            alt={m.name}
-                            width={18}
-                            height={18}
-                            className={`mr-1 ${
-                              m.icon.includes("openai") ||
-                              m.icon.includes("anthropic")
-                                ? "dark:invert"
-                                : ""
-                            }`}
-                          />
-                          {m.name}
-                          {model === m.id && <span className="ml-auto">✓</span>}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                      <FileIcon className="mr-0.5 h-4 w-4" />
+                      Upload files
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-                  <VoiceInput onTranscription={handleTranscription} />
-
-                  <div className="flex-1" />
-
-                  <Button
-                    type="submit"
-                    size="icon"
-                    className="rounded-full size-9 bg-black hover:bg-black/90 dark:bg-white dark:hover:bg-white/90 shrink-0"
-                    disabled={isLoading}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="text-gray-600 h-8 hover:text-gray-700 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px] rounded-full shrink-0 text-xs px-3 py-1 inline-flex items-center gap-1.5"
+                      disabled={modelsReadOnly}
+                    >
+                      {renderModelButtonContent()}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    className="w-[200px] rounded-xl"
+                    align="start"
+                    side={isMobile ? "top" : "right"}
                   >
-                    <SendHorizonalIcon className="size-4 text-white dark:text-black" />
-                    <span className="sr-only">Send</span>
-                  </Button>
-                </TooltipProvider>
+                    {models.map((m) => (
+                      <DropdownMenuItem
+                        key={m.id}
+                        className="p-2.5 cursor-pointer rounded-xl flex items-center"
+                        onClick={() => setModel(m.id)}
+                      >
+                        <Image
+                          src={m.icon}
+                          alt={m.name}
+                          width={18}
+                          height={18}
+                          className={`mr-1 ${
+                            m.icon.includes("openai") ||
+                            m.icon.includes("anthropic")
+                              ? "dark:invert"
+                              : ""
+                          }`}
+                        />
+                        {m.name}
+                        {model === m.id && <span className="ml-auto">✓</span>}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <VoiceInput onTranscription={handleTranscription} />
+
+                <div className="flex-1" />
+
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="rounded-full size-9 bg-black hover:bg-black/90 dark:bg-white dark:hover:bg-white/90 shrink-0"
+                  disabled={isLoading}
+                >
+                  <SendHorizonalIcon className="size-4 text-white dark:text-black" />
+                  <span className="sr-only">Send</span>
+                </Button>
               </div>
             </form>
           </CardContent>

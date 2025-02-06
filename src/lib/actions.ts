@@ -1,10 +1,11 @@
 "use server";
 
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { auth } from "@/app/auth";
 import { chats } from "../../db/schema";
 import { db } from "../../db";
 
+// Get all chats of a user
 export async function getChats(page: number = 1, limit: number = 40): Promise<{
   chats: {
     id: string;
@@ -43,4 +44,18 @@ export async function getChats(page: number = 1, limit: number = 40): Promise<{
     chats: chatsToReturn,
     hasMore,
   };
+}
+
+// Rename Chat
+export async function renameChat(chatId: string, newTitle: string) {
+  const session = await auth();
+
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
+  await db
+    .update(chats)
+    .set({ title: newTitle })
+    .where(and(eq(chats.id, chatId), eq(chats.userId, session.user.id as string)));
 }

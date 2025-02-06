@@ -19,6 +19,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./ui/sidebar";
 import { models } from "@/lib/models";
+import { renameChat } from "@/lib/actions";
 
 interface ChatSidebarProps {
   chatId: string;
@@ -46,8 +47,8 @@ const ChatSidebar = ({ chatId, modelId, chatTitle }: ChatSidebarProps) => {
     setIsOpen(false);
   };
 
-  const handleSave = () => {
-    // TODO: Add API call to save the new title
+  const handleSave = async () => {
+    await renameChat(chatId, editedTitle.trim());
     setIsEditing(false);
     setEditedTitle(editedTitle.trim() || chatTitle); // Fallback to original title if empty
   };
