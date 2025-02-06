@@ -2,7 +2,7 @@
 
 import { and, desc, eq } from "drizzle-orm";
 import { auth } from "@/app/auth";
-import { chats } from "../../db/schema";
+import { chats, users } from "../../db/schema";
 import { db } from "../../db";
 
 // Get all chats of a user
@@ -168,4 +168,26 @@ export async function deleteAllChats() {
         eq(chats.archived, false)
       )
     );
+}
+
+// Get user data
+export async function getUserData() {
+  const session = await auth();
+
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
+  const user = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      image: users.image,
+    })
+    .from(users)
+    .where(eq(users.id, session.user.id as string))
+    .then((res) => res[0]);
+
+  return user;
 }

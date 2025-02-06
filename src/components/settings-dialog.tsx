@@ -11,14 +11,13 @@ import {
 import { Label } from "@/components/ui/label";
 import {
   Settings,
-  UserPen,
-  Cog,
-  AppWindow,
   X,
   ChevronLeft,
   CircleUserIcon,
-  ChartArea,
   Loader2Icon,
+  ReceiptText,
+  ChartColumnIncreasing,
+  SettingsIcon,
 } from "lucide-react";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -45,12 +44,14 @@ import {
 import { archiveAllChats, deleteAllChats } from "@/lib/actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { AccountTab } from "./settings/account-tab";
+import { BillingTab } from "./settings/billing-tab";
+import UsageTab from "./settings/usage-tab";
 
 const sidebarItems = [
-  { id: "general", icon: Cog, label: "General" },
-  { id: "personalization", icon: UserPen, label: "Personalization" },
-  { id: "connected-apps", icon: AppWindow, label: "Connected apps" },
-  { id: "usage", icon: ChartArea, label: "Usage" },
+  { id: "general", icon: SettingsIcon, label: "General" },
+  { id: "usage", icon: ChartColumnIncreasing, label: "Usage" },
+  { id: "billing", icon: ReceiptText, label: "Billing" },
   { id: "account", icon: CircleUserIcon, label: "Account" },
 ];
 
@@ -127,7 +128,6 @@ export function SettingsDialog() {
   };
 
   const renderTabContent = () => {
-    // You can add different content for each tab here
     switch (activeTab) {
       case "general":
         return (
@@ -207,13 +207,6 @@ export function SettingsDialog() {
                 )}
               </Button>
             </div>
-
-            {/* <div className="flex items-center justify-between">
-              <Label>Log out on this device</Label>
-              <Button variant="outline" className="rounded-xl px-5 py-1 h-8">
-                Log out
-              </Button>
-            </div> */}
           </>
         );
       case "personalization":
@@ -225,13 +218,12 @@ export function SettingsDialog() {
             </Button>
           </div>
         );
-      // Add cases for other tabs as needed
-      default:
-        return (
-          <div className="text-sm text-gray-500">
-            Content for {activeTab} will be added here
-          </div>
-        );
+      case "usage":
+        return <UsageTab />;
+      case "billing":
+        return <BillingTab />;
+      case "account":
+        return <AccountTab />;
     }
   };
 
