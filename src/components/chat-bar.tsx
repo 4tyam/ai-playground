@@ -4,7 +4,6 @@ import {
   Plus,
   FileIcon,
   SendHorizonalIcon,
-  MicIcon,
   XIcon,
   Loader2,
 } from "lucide-react";
@@ -32,6 +31,7 @@ import { useDropzone } from "react-dropzone";
 import { useRouter } from "next/navigation";
 import { models } from "@/lib/models";
 import MaxUsageDialog from "@/components/max-usage-dialog";
+import { VoiceInput } from "@/components/voice-input";
 
 type FilePreview = {
   url: string;
@@ -84,6 +84,7 @@ export default function ChatBar({
   const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showMaxUsageDialog, setShowMaxUsageDialog] = useState(false);
+  const [input, setInput] = useState("");
 
   const getModelName = (modelId: string) => {
     return models.find((m) => m.id === modelId)?.name || modelId;
@@ -98,11 +99,7 @@ export default function ChatBar({
 
   const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const textarea = e.target;
-    textarea.style.height = "auto";
-    // Much smaller max height for mobile
-    const maxHeight = isMobile ? 80 : 160;
-    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
-    textarea.style.height = `${newHeight}px`;
+    setInput(textarea.value);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -193,7 +190,9 @@ export default function ChatBar({
     noKeyboard: true,
   });
 
-  const [input, setInput] = useState("");
+  const handleTranscription = (text: string) => {
+    setInput((prev) => prev + (prev ? " " : "") + text);
+  };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -266,6 +265,17 @@ export default function ChatBar({
       setModel(selectedModel);
     }
   }, [selectedModel]);
+
+  // Add this useEffect to watch input changes
+  useEffect(() => {
+    if (inputRef.current) {
+      const textarea = inputRef.current;
+      textarea.style.height = "auto";
+      const maxHeight = isMobile ? 80 : 160;
+      const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+      textarea.style.height = `${newHeight}px`;
+    }
+  }, [input, isMobile]); // Depend on input and isMobile
 
   const renderModelButtonContent = () => {
     const currentModel = models.find((m) => m.id === model);
@@ -513,21 +523,7 @@ export default function ChatBar({
                     </DropdownMenuContent>
                   </DropdownMenu>
 
-                  <Tooltip delayDuration={200}>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="rounded-full size-8 shrink-0 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px]"
-                      >
-                        <MicIcon className="size-3" />
-                        <span className="sr-only">Voice input</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      <p>Voice input</p>
-                    </TooltipContent>
-                  </Tooltip>
+                  <VoiceInput onTranscription={handleTranscription} />
 
                   <div className="flex-1" />
 
