@@ -20,7 +20,7 @@ import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "./ui/sidebar";
 import { models } from "@/lib/models";
-import { deleteChat, renameChat } from "@/lib/actions";
+import { deleteChat, renameChat, archiveChat } from "@/lib/actions";
 import { toast } from "sonner";
 
 interface ChatItemProps {
@@ -28,9 +28,16 @@ interface ChatItemProps {
   modelId: string;
   chatTitle: string;
   onDelete?: (chatId: string) => void;
+  onArchive?: (chatId: string) => void;
 }
 
-const ChatItem = ({ chatId, modelId, chatTitle, onDelete }: ChatItemProps) => {
+const ChatItem = ({
+  chatId,
+  modelId,
+  chatTitle,
+  onDelete,
+  onArchive,
+}: ChatItemProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(chatTitle);
@@ -67,6 +74,7 @@ const ChatItem = ({ chatId, modelId, chatTitle, onDelete }: ChatItemProps) => {
   };
 
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent dropdown from closing immediately
@@ -83,6 +91,24 @@ const ChatItem = ({ chatId, modelId, chatTitle, onDelete }: ChatItemProps) => {
       toast.error("Failed to delete chat");
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleArchive = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isArchiving) return;
+
+    setIsArchiving(true);
+    try {
+      await archiveChat(chatId);
+      onArchive?.(chatId);
+      if (isActive) {
+        router.push("/chat");
+      }
+    } catch (error) {
+      toast.error("Failed to archive chat");
+    } finally {
+      setIsArchiving(false);
     }
   };
 
@@ -178,10 +204,23 @@ const ChatItem = ({ chatId, modelId, chatTitle, onDelete }: ChatItemProps) => {
               <span>Rename</span>
             </div>
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer rounded-xl p-2.5">
+          <DropdownMenuItem
+            className="cursor-pointer rounded-xl p-2.5"
+            onClick={handleArchive}
+            disabled={isArchiving}
+          >
             <div className="flex items-center justify-between gap-2">
-              <ArchiveIcon className="size-3.5" />
-              <span>Archive</span>
+              {isArchiving ? (
+                <>
+                  <Loader2Icon className="size-3.5 animate-spin" />
+                  <span>Archiving</span>
+                </>
+              ) : (
+                <>
+                  <ArchiveIcon className="size-3.5" />
+                  <span>Archive</span>
+                </>
+              )}
             </div>
           </DropdownMenuItem>
           <DropdownMenuItem

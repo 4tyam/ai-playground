@@ -8,7 +8,8 @@ import { db } from "../../db";
 // Get all chats of a user
 export async function getChats(
   page: number = 1,
-  limit: number = 40
+  limit: number = 40,
+  showArchived: boolean = false
 ): Promise<{
   chats: {
     id: string;
@@ -34,12 +35,16 @@ export async function getChats(
       createdAt: chats.createdAt,
     })
     .from(chats)
-    .where(eq(chats.userId, session.user.id as string))
+    .where(
+      and(
+        eq(chats.userId, session.user.id as string),
+        eq(chats.archived, showArchived)
+      )
+    )
     .orderBy(desc(chats.createdAt))
-    .limit(limit + 1) // Fetch one extra to check if there are more
+    .limit(limit + 1)
     .offset(offset);
 
-  // Check if there are more chats
   const hasMore = allChats.length > limit;
   const chatsToReturn = hasMore ? allChats.slice(0, -1) : allChats;
 
@@ -75,6 +80,38 @@ export async function deleteChat(chatId: string) {
 
   await db
     .delete(chats)
+    .where(
+      and(eq(chats.id, chatId), eq(chats.userId, session.user.id as string))
+    );
+}
+
+// Archive Chat
+export async function archiveChat(chatId: string) {
+  const session = await auth();
+
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
+  await db
+    .update(chats)
+    .set({ archived: true })
+    .where(
+      and(eq(chats.id, chatId), eq(chats.userId, session.user.id as string))
+    );
+}
+
+// Unarchive Chat
+export async function unarchiveChat(chatId: string) {
+  const session = await auth();
+
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
+  await db
+    .update(chats)
+    .set({ archived: false })
     .where(
       and(eq(chats.id, chatId), eq(chats.userId, session.user.id as string))
     );

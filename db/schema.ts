@@ -7,6 +7,7 @@ import {
   pgEnum,
   index,
   numeric,
+  boolean,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
 
@@ -20,8 +21,12 @@ export const users = pgTable("user", {
   email: text("email").unique(),
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
-  usageAmount: numeric("usageAmount", { precision: 25, scale: 20 }).notNull().default("0"),
-  maxAmount: numeric("maxAmount", { precision: 25, scale: 20 }).notNull().default("0"),
+  usageAmount: numeric("usageAmount", { precision: 25, scale: 20 })
+    .notNull()
+    .default("0"),
+  maxAmount: numeric("maxAmount", { precision: 25, scale: 20 })
+    .notNull()
+    .default("0"),
 });
 
 export const accounts = pgTable(
@@ -86,6 +91,7 @@ export const chats = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     title: text("title"),
     model: text("model").notNull(),
+    archived: boolean("archived").notNull().default(false),
     createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
   },
   (table) => [index("chat_user_id_idx").on(table.userId)]

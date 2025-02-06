@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "./ui/separator";
 import { useTheme } from "next-themes";
+import { ArchivedChats } from "./archived-chats";
 
 const sidebarItems = [
   { id: "general", icon: Cog, label: "General" },
@@ -45,6 +46,7 @@ export function SettingsDialog() {
   const [activeTab, setActiveTab] = useState("general");
   const [showSidebar, setShowSidebar] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [showArchivedChats, setShowArchivedChats] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -111,7 +113,11 @@ export function SettingsDialog() {
 
             <div className="flex items-center justify-between border-t pt-5">
               <Label>Archived chats</Label>
-              <Button variant="outline" className="rounded-xl px-5 py-1 h-8">
+              <Button
+                variant="outline"
+                className="rounded-xl px-5 py-1 h-8"
+                onClick={() => setShowArchivedChats(true)}
+              >
                 Manage
               </Button>
             </div>
@@ -161,83 +167,90 @@ export function SettingsDialog() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <DropdownMenuItem
-          onSelect={(e) => {
-            e.preventDefault();
-            setOpen(true);
-          }}
-          className="p-2.5 cursor-pointer rounded-xl"
-        >
-          <Settings className="mr-2 h-4 w-4" />
-          Settings
-        </DropdownMenuItem>
-      </DialogTrigger>
-      <DialogContent className="max-w-xs sm:max-w-[600px] p-0 [&>button]:hidden rounded-2xl pb-4">
-        <DialogHeader className="px-6 py-4 flex flex-row items-center justify-between border-b">
-          <div className="flex items-center gap-2">
-            {!showSidebar && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="sm:hidden size-7 rounded-full"
-                onClick={() => setShowSidebar(true)}
-              >
-                <ChevronLeft className="size-4" />
-              </Button>
-            )}
-            <DialogTitle>
-              {!showSidebar
-                ? sidebarItems.find((item) => item.id === activeTab)?.label
-                : "Settings"}
-            </DialogTitle>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 rounded-full"
-            onClick={() => setOpen(false)}
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              setOpen(true);
+            }}
+            className="p-2.5 cursor-pointer rounded-xl"
           >
-            <X className="size-4" />
-          </Button>
-        </DialogHeader>
-
-        <div className="flex max-h-[85vh] sm:max-h-[600px] overflow-hidden -mt-4">
-          {/* Sidebar */}
-          <div
-            className={`${
-              showSidebar ? "flex" : "hidden"
-            } sm:flex w-full sm:w-52 flex-shrink-0 overflow-y-auto`}
-          >
-            <div className="w-full">
-              {sidebarItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleTabChange(item.id)}
-                  className={`flex items-center gap-3 w-full px-4 py-2 text-sm ${
-                    activeTab === item.id
-                      ? "bg-gray-100 dark:bg-gray-800"
-                      : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                  }`}
+            <Settings className="mr-2 h-4 w-4" />
+            Settings
+          </DropdownMenuItem>
+        </DialogTrigger>
+        <DialogContent className="max-w-xs sm:max-w-[600px] p-0 [&>button]:hidden rounded-2xl pb-4">
+          <DialogHeader className="px-6 py-4 flex flex-row items-center justify-between border-b">
+            <div className="flex items-center gap-2">
+              {!showSidebar && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="sm:hidden size-7 rounded-full"
+                  onClick={() => setShowSidebar(true)}
                 >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </button>
-              ))}
+                  <ChevronLeft className="size-4" />
+                </Button>
+              )}
+              <DialogTitle>
+                {!showSidebar
+                  ? sidebarItems.find((item) => item.id === activeTab)?.label
+                  : "Settings"}
+              </DialogTitle>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 rounded-full"
+              onClick={() => setOpen(false)}
+            >
+              <X className="size-4" />
+            </Button>
+          </DialogHeader>
+
+          <div className="flex max-h-[85vh] sm:max-h-[600px] overflow-hidden -mt-4">
+            {/* Sidebar */}
+            <div
+              className={`${
+                showSidebar ? "flex" : "hidden"
+              } sm:flex w-full sm:w-52 flex-shrink-0 overflow-y-auto`}
+            >
+              <div className="w-full">
+                {sidebarItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => handleTabChange(item.id)}
+                    className={`flex items-center gap-3 w-full px-4 py-2 text-sm ${
+                      activeTab === item.id
+                        ? "bg-gray-100 dark:bg-gray-800"
+                        : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    }`}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Separator orientation="vertical" />
+
+            {/* Content Area */}
+            {(!showSidebar || !isMobile) && (
+              <div className="flex-1 px-6 py-4 space-y-8 overflow-y-auto">
+                {renderTabContent()}
+              </div>
+            )}
           </div>
+        </DialogContent>
+      </Dialog>
 
-          <Separator orientation="vertical" />
-
-          {/* Content Area */}
-          {(!showSidebar || !isMobile) && (
-            <div className="flex-1 px-6 py-4 space-y-8 overflow-y-auto">
-              {renderTabContent()}
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+      <ArchivedChats
+        open={showArchivedChats}
+        onOpenChange={setShowArchivedChats}
+      />
+    </>
   );
 }

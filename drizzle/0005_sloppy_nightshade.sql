@@ -1,0 +1,1 @@
+ALTER TABLE "chat" ADD COLUMN "archived" boolean DEFAULT false NOT NULL;

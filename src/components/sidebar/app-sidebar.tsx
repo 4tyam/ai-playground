@@ -34,7 +34,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     setIsLoading(true);
     try {
-      const result = await getChats(page);
+      const result = await getChats(page, 40, false);
       setChats((prevChats) => {
         if (page === 1) {
           return result.chats;
@@ -65,6 +65,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     [chats.length, loadMoreChats]
   );
 
+  const handleArchiveChat = React.useCallback(
+    (archivedChatId: string) => {
+      setChats((prevChats) =>
+        prevChats.filter((chat) => chat.id !== archivedChatId)
+      );
+
+      if (chats.length === 1) {
+        setPage(1);
+        setHasMore(true);
+        loadMoreChats();
+      }
+    },
+    [chats.length, loadMoreChats]
+  );
+
   React.useEffect(() => {
     loadMoreChats();
   }, [loadMoreChats]);
@@ -77,9 +92,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         modelId={chat.model}
         chatTitle={chat.title ?? "Untitled Chat"}
         onDelete={handleDeleteChat}
+        onArchive={handleArchiveChat}
       />
     ));
-  }, [chats, handleDeleteChat]);
+  }, [chats, handleDeleteChat, handleArchiveChat]);
 
   return (
     <Sidebar className="border-none" {...props}>
