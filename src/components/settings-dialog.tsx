@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   CircleUserIcon,
   ChartArea,
+  Loader2Icon,
 } from "lucide-react";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,19 @@ import {
 import { Separator } from "./ui/separator";
 import { useTheme } from "next-themes";
 import { ArchivedChats } from "./archived-chats";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { archiveAllChats, deleteAllChats } from "@/lib/actions";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const sidebarItems = [
   { id: "general", icon: Cog, label: "General" },
@@ -47,6 +61,12 @@ export function SettingsDialog() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [showArchivedChats, setShowArchivedChats] = useState(false);
+  const [showArchiveAllConfirm, setShowArchiveAllConfirm] = useState(false);
+  const [isArchivingAll, setIsArchivingAll] = useState(false);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
+
+  const router = useRouter();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -76,6 +96,34 @@ export function SettingsDialog() {
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
     setShowSidebar(true);
+  };
+
+  const handleArchiveAll = async () => {
+    setIsArchivingAll(true);
+    try {
+      await archiveAllChats();
+      toast.success("All chats archived");
+      setShowArchiveAllConfirm(false);
+      router.refresh();
+    } catch (error) {
+      toast.error("Failed to archive chats");
+    } finally {
+      setIsArchivingAll(false);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    setIsDeletingAll(true);
+    try {
+      await deleteAllChats();
+      toast.success("All chats deleted");
+      setShowDeleteAllConfirm(false);
+      router.refresh();
+    } catch (error) {
+      toast.error("Failed to delete chats");
+    } finally {
+      setIsDeletingAll(false);
+    }
   };
 
   const renderTabContent = () => {
@@ -124,8 +172,20 @@ export function SettingsDialog() {
 
             <div className="flex items-center justify-between">
               <Label>Archive all chats</Label>
-              <Button variant="outline" className="rounded-xl px-5 py-1 h-8">
-                Archive all
+              <Button
+                variant="outline"
+                className="rounded-xl px-5 py-1 h-8"
+                onClick={() => setShowArchiveAllConfirm(true)}
+                disabled={isArchivingAll}
+              >
+                {isArchivingAll ? (
+                  <>
+                    <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                    Archiving
+                  </>
+                ) : (
+                  "Archive all"
+                )}
               </Button>
             </div>
 
@@ -134,8 +194,17 @@ export function SettingsDialog() {
               <Button
                 variant="destructive"
                 className="rounded-xl px-5 py-1 h-8"
+                onClick={() => setShowDeleteAllConfirm(true)}
+                disabled={isDeletingAll}
               >
-                Delete all
+                {isDeletingAll ? (
+                  <>
+                    <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                    Deleting
+                  </>
+                ) : (
+                  "Delete all"
+                )}
               </Button>
             </div>
 
@@ -251,6 +320,70 @@ export function SettingsDialog() {
         open={showArchivedChats}
         onOpenChange={setShowArchivedChats}
       />
+
+      <AlertDialog
+        open={showArchiveAllConfirm}
+        onOpenChange={setShowArchiveAllConfirm}
+      >
+        <AlertDialogContent className="rounded-xl max-w-xs sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive all chats</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will archive all your chats. You can access them later in the
+              archived chats section. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-xl"
+              onClick={handleArchiveAll}
+              disabled={isArchivingAll}
+            >
+              {isArchivingAll ? (
+                <>
+                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                  Archiving
+                </>
+              ) : (
+                "Continue"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={showDeleteAllConfirm}
+        onOpenChange={setShowDeleteAllConfirm}
+      >
+        <AlertDialogContent className="rounded-xl max-w-xs sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete all chats</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all your chats. This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-xl bg-destructive hover:bg-destructive/90"
+              onClick={handleDeleteAll}
+              disabled={isDeletingAll}
+            >
+              {isDeletingAll ? (
+                <>
+                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

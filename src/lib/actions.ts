@@ -116,3 +116,56 @@ export async function unarchiveChat(chatId: string) {
       and(eq(chats.id, chatId), eq(chats.userId, session.user.id as string))
     );
 }
+
+// Archive all chats
+export async function archiveAllChats() {
+  const session = await auth();
+
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
+  await db
+    .update(chats)
+    .set({ archived: true })
+    .where(
+      and(
+        eq(chats.userId, session.user.id as string),
+        eq(chats.archived, false)
+      )
+    );
+}
+
+// Unarchive all chats
+export async function unarchiveAllChats() {
+  const session = await auth();
+
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
+  await db
+    .update(chats)
+    .set({ archived: false })
+    .where(
+      and(eq(chats.userId, session.user.id as string), eq(chats.archived, true))
+    );
+}
+
+// Delete all chats
+export async function deleteAllChats() {
+  const session = await auth();
+
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
+  await db
+    .delete(chats)
+    .where(
+      and(
+        eq(chats.userId, session.user.id as string),
+        eq(chats.archived, false)
+      )
+    );
+}
