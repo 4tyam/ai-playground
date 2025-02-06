@@ -14,7 +14,7 @@ import {
 import SidebarTopNav from "./sidebar-top-nav";
 import ChatItem from "../chat-item";
 import { getChats } from "@/lib/actions";
-import { Loader2Icon } from "lucide-react";
+import { Loader2Icon, MessagesSquareIcon } from "lucide-react";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [chats, setChats] = React.useState<
@@ -104,23 +104,39 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup className="h-full">
-          <SidebarGroupLabel className="text-muted-foreground/70">
-            Recent Chats
-          </SidebarGroupLabel>
+          {chats.length > 0 && (
+            <SidebarGroupLabel className="text-muted-foreground/70">
+              Recent Chats
+            </SidebarGroupLabel>
+          )}
           <SidebarGroupContent className="h-[calc(100vh-120px)]">
-            <VList
-              className="flex flex-col gap-1 h-full [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 light:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent"
-              overscan={20}
-              onScrollEnd={hasMore ? loadMoreChats : undefined}
-              itemSize={56}
-            >
-              {chatItems}
-              {isLoading && (
-                <div className="py-4 flex items-center justify-center pt-14 text-muted-foreground/50">
-                  <Loader2Icon className="size-6 animate-spin" />
+            {!isLoading && chats.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center gap-4 px-4 text-center">
+                <div className="bg-gray-200/50 dark:bg-muted/50 rounded-full p-4">
+                  <MessagesSquareIcon className="size-8 text-muted-foreground/50" />
                 </div>
-              )}
-            </VList>
+                <div className="space-y-2">
+                  <h3 className="font-semibold">No chats yet</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Start a new chat to begin your conversation
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <VList
+                className="flex flex-col gap-1 h-full [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 light:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent"
+                overscan={20}
+                onScrollEnd={hasMore ? loadMoreChats : undefined}
+                itemSize={56}
+              >
+                {chatItems}
+                {isLoading && (
+                  <div className="py-4 flex items-center justify-center pt-14 text-muted-foreground/50">
+                    <Loader2Icon className="size-6 animate-spin" />
+                  </div>
+                )}
+              </VList>
+            )}
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

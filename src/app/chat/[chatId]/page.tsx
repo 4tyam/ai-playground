@@ -2,8 +2,11 @@
 
 import ChatBar from "@/components/chat-bar";
 import ChatMessages from "@/components/chat-messages";
+import Loading from "@/components/loading";
 import { useEffect, useState } from "react";
 import { use } from "react";
+import { notFound, useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 type Message = {
   id: string;
@@ -16,26 +19,44 @@ type Message = {
 const ChatIdPage = ({ params }: { params: Promise<{ chatId: string }> }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [model, setModel] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
   const { chatId } = use(params);
+  const router = useRouter();
 
   useEffect(() => {
-    // Fetch messages from API route
     const fetchMessages = async () => {
+      setIsLoading(true);
       try {
         const response = await fetch(`/api/chat/${chatId}/messages`);
-        if (!response.ok) throw new Error("Failed to fetch messages");
+
+        if (response.status === 404) {
+          // Chat not found, redirect to 404
+          return notFound();
+        }
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch messages");
+        }
+
         const data = await response.json();
         setMessages(data.chatMessages);
+
         // Get model from the first message since it's included in each message
         if (data.chatMessages.length > 0) {
           setModel(data.chatMessages[0].model);
         }
       } catch (error) {
         console.error("Error fetching messages:", error);
+        toast.error("Failed to load chat");
+        // Optionally redirect to home page on error
+        router.push("/chat");
+      } finally {
+        setIsLoading(false);
       }
     };
+
     fetchMessages();
-  }, [chatId]);
+  }, [chatId, router]);
 
   const handleMessageSent = (
     userMessage: string,
@@ -74,6 +95,10 @@ const ChatIdPage = ({ params }: { params: Promise<{ chatId: string }> }) => {
       });
     }
   };
+
+  if (isLoading) {
+    return <Loading />;
+  }
 
   return (
     <main className="h-[calc(100vh-80px)] -m-4 relative">
