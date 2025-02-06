@@ -3,6 +3,7 @@
 import {
   ArchiveIcon,
   EllipsisIcon,
+  Loader2Icon,
   PencilIcon,
   ShareIcon,
   TrashIcon,
@@ -16,24 +17,27 @@ import {
 } from "./ui/dropdown-menu";
 import Link from "next/link";
 import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "./ui/sidebar";
 import { models } from "@/lib/models";
-import { renameChat } from "@/lib/actions";
+import { deleteChat, renameChat } from "@/lib/actions";
+import { toast } from "sonner";
 
-interface ChatSidebarProps {
+interface ChatItemProps {
   chatId: string;
   modelId: string;
   chatTitle: string;
+  onDelete?: (chatId: string) => void;
 }
 
-const ChatSidebar = ({ chatId, modelId, chatTitle }: ChatSidebarProps) => {
+const ChatItem = ({ chatId, modelId, chatTitle, onDelete }: ChatItemProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(chatTitle);
   const pathName = usePathname();
   const isActive = pathName.includes(chatId);
   const { setOpenMobile, isMobile } = useSidebar();
+  const router = useRouter();
 
   const handleChatClick = () => {
     if (isMobile) {
@@ -59,6 +63,26 @@ const ChatSidebar = ({ chatId, modelId, chatTitle }: ChatSidebarProps) => {
     } else if (e.key === "Escape") {
       setIsEditing(false);
       setEditedTitle(chatTitle); // Reset to original title
+    }
+  };
+
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent dropdown from closing immediately
+    if (isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteChat(chatId);
+      onDelete?.(chatId);
+      if (isActive) {
+        router.push("/chat");
+      }
+    } catch (error) {
+      toast.error("Failed to delete chat");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -160,10 +184,23 @@ const ChatSidebar = ({ chatId, modelId, chatTitle }: ChatSidebarProps) => {
               <span>Archive</span>
             </div>
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer rounded-xl p-2.5">
+          <DropdownMenuItem
+            className="cursor-pointer rounded-xl p-2.5"
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
             <div className="flex items-center justify-between gap-2">
-              <TrashIcon className="size-3.5 text-destructive" />
-              <span className="text-destructive">Delete</span>
+              {isDeleting ? (
+                <>
+                  <Loader2Icon className="size-3.5 animate-spin" />
+                  <span>Deleting</span>
+                </>
+              ) : (
+                <>
+                  <TrashIcon className="size-3.5 text-destructive" />
+                  <span className="text-destructive">Delete</span>
+                </>
+              )}
             </div>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -172,4 +209,4 @@ const ChatSidebar = ({ chatId, modelId, chatTitle }: ChatSidebarProps) => {
   );
 };
 
-export default ChatSidebar;
+export default ChatItem;

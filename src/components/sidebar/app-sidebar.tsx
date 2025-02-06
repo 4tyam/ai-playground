@@ -12,7 +12,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import SidebarTopNav from "./sidebar-top-nav";
-import ChatSidebar from "../chat-sidebar";
+import ChatItem from "../chat-item";
 import { getChats } from "@/lib/actions";
 import { Loader2Icon } from "lucide-react";
 
@@ -30,12 +30,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [isLoading, setIsLoading] = React.useState(false);
 
   const loadMoreChats = React.useCallback(async () => {
-    if (isLoading || !hasMore) return;
+    if (isLoading || (!hasMore && page !== 1)) return;
 
     setIsLoading(true);
     try {
       const result = await getChats(page);
-      setChats((prevChats) => [...prevChats, ...result.chats]);
+      setChats((prevChats) => {
+        if (page === 1) {
+          return result.chats;
+        }
+        return [...prevChats, ...result.chats];
+      });
       setHasMore(result.hasMore);
       setPage((p) => p + 1);
     } catch (error) {
@@ -45,22 +50,36 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   }, [page, isLoading, hasMore]);
 
-  // Initial load
+  const handleDeleteChat = React.useCallback(
+    (deletedChatId: string) => {
+      setChats((prevChats) =>
+        prevChats.filter((chat) => chat.id !== deletedChatId)
+      );
+
+      if (chats.length === 1) {
+        setPage(1);
+        setHasMore(true);
+        loadMoreChats();
+      }
+    },
+    [chats.length, loadMoreChats]
+  );
+
   React.useEffect(() => {
     loadMoreChats();
-  }, []);
+  }, [loadMoreChats]);
 
-  // Memoize chat items to reduce re-renders
   const chatItems = React.useMemo(() => {
     return chats.map((chat) => (
-      <ChatSidebar
+      <ChatItem
         key={chat.id}
         chatId={chat.id}
         modelId={chat.model}
         chatTitle={chat.title ?? "Untitled Chat"}
+        onDelete={handleDeleteChat}
       />
     ));
-  }, [chats]);
+  }, [chats, handleDeleteChat]);
 
   return (
     <Sidebar className="border-none" {...props}>

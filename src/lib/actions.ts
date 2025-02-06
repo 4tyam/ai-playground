@@ -6,7 +6,10 @@ import { chats } from "../../db/schema";
 import { db } from "../../db";
 
 // Get all chats of a user
-export async function getChats(page: number = 1, limit: number = 40): Promise<{
+export async function getChats(
+  page: number = 1,
+  limit: number = 40
+): Promise<{
   chats: {
     id: string;
     model: string;
@@ -57,5 +60,22 @@ export async function renameChat(chatId: string, newTitle: string) {
   await db
     .update(chats)
     .set({ title: newTitle })
-    .where(and(eq(chats.id, chatId), eq(chats.userId, session.user.id as string)));
+    .where(
+      and(eq(chats.id, chatId), eq(chats.userId, session.user.id as string))
+    );
+}
+
+// Delete Chat
+export async function deleteChat(chatId: string) {
+  const session = await auth();
+
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
+  await db
+    .delete(chats)
+    .where(
+      and(eq(chats.id, chatId), eq(chats.userId, session.user.id as string))
+    );
 }
