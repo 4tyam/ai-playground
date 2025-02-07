@@ -122,12 +122,12 @@ export const usageLogs = pgTable("usageLog", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  userId: text("userId")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  messageId: text("messageId")
-    .notNull()
-    .references(() => messages.id, { onDelete: "cascade" }),
+  userId: text("userId").references(() => users.id, { onDelete: "set null" }),
+  userEmail: text("userEmail").notNull(),
+  userName: text("userName"),
+  messageId: text("messageId").references(() => messages.id, {
+    onDelete: "set null",
+  }),
   model: text("model").notNull(),
   promptTokens: integer("promptTokens").notNull(),
   completionTokens: integer("completionTokens").notNull(),

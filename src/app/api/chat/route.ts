@@ -1,12 +1,17 @@
-import { generateText } from "ai"
-import { openai } from "@ai-sdk/openai"
-import { anthropic } from "@ai-sdk/anthropic"
-import { groq } from "@ai-sdk/groq"
-import { google } from '@ai-sdk/google';
+import { generateText } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { groq } from "@ai-sdk/groq";
+import { google } from "@ai-sdk/google";
 import { NextResponse } from "next/server";
 import { auth } from "@/app/auth";
 import { db } from "../../../../db";
-import { users, usageLogs, chats, messages as messagesTable } from "../../../../db/schema";
+import {
+  users,
+  usageLogs,
+  chats,
+  messages as messagesTable,
+} from "../../../../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { calculateCost } from "@/lib/pricing";
 
@@ -18,7 +23,7 @@ type Message = {
 
 export const POST = async (req: Request) => {
   const session = await auth();
-  
+
   if (!session?.user) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
@@ -27,7 +32,7 @@ export const POST = async (req: Request) => {
   const userInfo = await db
     .select({
       usageAmount: users.usageAmount,
-      maxAmount: users.maxAmount
+      maxAmount: users.maxAmount,
     })
     .from(users)
     .where(eq(users.id, session.user.id as string))
@@ -44,11 +49,17 @@ export const POST = async (req: Request) => {
     return new NextResponse("Usage limit exceeded", { status: 403 });
   }
 
-  const { prompt, chatId, model: requestModel, provider, messages } = await req.json();
+  const {
+    prompt,
+    chatId,
+    model: requestModel,
+    provider,
+    messages,
+  } = await req.json();
 
   // Ensure we have a valid message content and model
   const messageContent = prompt || messages?.[0]?.content;
-  
+
   if (!messageContent) {
     return new NextResponse("Message content is required", { status: 400 });
   }
@@ -73,9 +84,9 @@ export const POST = async (req: Request) => {
 
       messageHistory = previousMessages
         .reverse() // Reverse to get correct chronological order
-        .map(msg => ({
+        .map((msg) => ({
           role: msg.role,
-          content: msg.content
+          content: msg.content,
         }));
     }
 
@@ -95,10 +106,7 @@ export const POST = async (req: Request) => {
         }
       })(),
       maxTokens: 1400,
-      messages: [
-        ...messageHistory,
-        { role: "user", content: messageContent }
-      ]
+      messages: [...messageHistory, { role: "user", content: messageContent }],
     });
 
     // Calculate cost of this request
@@ -141,7 +149,7 @@ export const POST = async (req: Request) => {
           title: messageContent.slice(0, 100),
         })
         .returning({ id: chats.id });
-      
+
       currentChatId = newChat.id;
     }
 
@@ -154,31 +162,36 @@ export const POST = async (req: Request) => {
     });
 
     // Insert AI response and get its ID
-    const [assistantMessage] = await db.insert(messagesTable).values({
-      chatId: currentChatId,
-      senderId: session.user.id as string,
-      content: text,
-      role: "assistant", 
-    }).returning({ id: messagesTable.id });
+    const [assistantMessage] = await db
+      .insert(messagesTable)
+      .values({
+        chatId: currentChatId,
+        senderId: session.user.id as string,
+        content: text,
+        role: "assistant",
+      })
+      .returning({ id: messagesTable.id });
 
     // Update user's usage amount and create usage log
     await db.transaction(async (tx) => {
       // Update user's total usage
       await tx
         .update(users)
-        .set({ 
-          usageAmount: (Number(usageAmount) + Number(cost)).toFixed(20)
+        .set({
+          usageAmount: (Number(usageAmount) + Number(cost)).toFixed(20),
         })
         .where(eq(users.id, session?.user?.id as string));
 
       // Create usage log entry
       await tx.insert(usageLogs).values({
         userId: session?.user?.id as string,
-        messageId: assistantMessage.id,  // Use the ID from the inserted message
+        userEmail: session?.user?.email as string,
+        userName: session?.user?.name as string,
+        messageId: assistantMessage.id,
         model: requestModel,
         promptTokens: usage.promptTokens,
         completionTokens: usage.completionTokens,
-        totalCost: cost
+        totalCost: cost,
       });
     });
 
@@ -187,15 +200,14 @@ export const POST = async (req: Request) => {
       chatId: currentChatId,
       usage: {
         ...usage,
-        cost // Return the full precision cost
-      }
+        cost,
+      },
     });
   } catch (error) {
     console.error("Error in chat route:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 };
-
 
 // import { openai } from '@ai-sdk/openai';
 // import { streamText } from 'ai';
