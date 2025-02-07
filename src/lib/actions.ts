@@ -1,8 +1,8 @@
 "use server";
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { auth } from "@/app/auth";
-import { chats, users } from "../../db/schema";
+import { chats, users, usageLogs } from "../../db/schema";
 import { db } from "../../db";
 
 // Get all chats of a user
@@ -190,4 +190,109 @@ export async function getUserData() {
     .then((res) => res[0]);
 
   return user;
+}
+
+type UsageData = {
+  currentUsage: string;
+  maxUsage: string;
+  percentage: number;
+};
+
+type DailyUsage = {
+  date: string;
+  requests: number;
+  tokens: number;
+};
+
+type ModelUsage = {
+  model: string;
+  requests: number;
+};
+
+// Get user usage data
+export async function getUserUsageData(): Promise<UsageData> {
+  const session = await auth();
+
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
+  const user = await db
+    .select({
+      usageAmount: users.usageAmount,
+      maxAmount: users.maxAmount,
+    })
+    .from(users)
+    .where(eq(users.id, session.user.id as string))
+    .then((res) => res[0]);
+
+  const percentage =
+    (parseFloat(user.usageAmount) / parseFloat(user.maxAmount)) * 100;
+
+  return {
+    currentUsage: user.usageAmount.toString(),
+    maxUsage: user.maxAmount.toString(),
+    percentage: Math.min(percentage, 100),
+  };
+}
+
+// Get daily usage statistics
+export async function getDailyUsage(): Promise<DailyUsage[]> {
+  const session = await auth();
+
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
+  // Get last 30 days including today
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
+  thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+  const dailyStats = await db
+    .select({
+      date: sql<string>`${usageLogs.timestamp}::date`,
+      requests: sql<number>`COUNT(DISTINCT ${usageLogs.messageId})`,
+      tokens: sql<number>`SUM(${usageLogs.promptTokens} + ${usageLogs.completionTokens})`,
+    })
+    .from(usageLogs)
+    .where(
+      and(
+        eq(usageLogs.userId, session.user.id as string),
+        sql`${usageLogs.timestamp} >= ${thirtyDaysAgo.toISOString()}`
+      )
+    )
+    .groupBy(sql`${usageLogs.timestamp}::date`);
+
+  return dailyStats;
+}
+
+// Get model usage statistics
+export async function getModelUsage(): Promise<ModelUsage[]> {
+  const session = await auth();
+
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
+  // Get the last 30 days of model usage
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const modelStats = await db
+    .select({
+      model: usageLogs.model,
+      requests: sql<number>`COUNT(DISTINCT ${usageLogs.messageId})`,
+    })
+    .from(usageLogs)
+    .where(
+      and(
+        eq(usageLogs.userId, session.user.id as string),
+        sql`${usageLogs.timestamp} >= ${thirtyDaysAgo.toISOString()}`
+      )
+    )
+    .groupBy(usageLogs.model)
+    .orderBy(desc(sql<number>`COUNT(DISTINCT ${usageLogs.messageId})`));
+
+  return modelStats;
 }
