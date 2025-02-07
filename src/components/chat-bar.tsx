@@ -26,6 +26,7 @@ import { useRouter } from "next/navigation";
 import { models } from "@/lib/models";
 import MaxUsageDialog from "@/components/max-usage-dialog";
 import { VoiceInput } from "@/components/voice-input";
+import { ModelSelector } from "@/components/model-selector";
 
 type FilePreview = {
   url: string;
@@ -59,6 +60,8 @@ type ChatBarProps = {
   ) => void;
 };
 
+const LOCAL_STORAGE_MODEL_KEY = "ai-playground:selected-model";
+
 export default function ChatBar({
   titleShown,
   modelsReadOnly,
@@ -72,13 +75,32 @@ export default function ChatBar({
 
   const [isLoading, setIsLoading] = useState(false);
 
-  const [model, setModel] = useState(selectedModel);
+  // const [model, setModel] = useState(selectedModel);
 
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showMaxUsageDialog, setShowMaxUsageDialog] = useState(false);
   const [input, setInput] = useState("");
+
+  const [mounted, setMounted] = useState(false);
+  // Initialize with default value only
+  const [model, setModel] = useState("");
+
+  // Handle localStorage in a separate effect after mount
+  useEffect(() => {
+    setMounted(true);
+    const savedModel = localStorage.getItem(LOCAL_STORAGE_MODEL_KEY);
+    if (savedModel) {
+      setModel(savedModel);
+    }
+  }, []);
+  // Save to localStorage when model changes
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem(LOCAL_STORAGE_MODEL_KEY, model);
+    }
+  }, [model, mounted]);
 
   const getModelName = (modelId: string) => {
     return models.find((m) => m.id === modelId)?.name || modelId;
@@ -271,40 +293,6 @@ export default function ChatBar({
     }
   }, [input, isMobile]); // Depend on input and isMobile
 
-  const renderModelButtonContent = () => {
-    const currentModel = models.find((m) => m.id === model);
-
-    if (!model) {
-      return (
-        <>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="ml-0.5">Loading</span>
-        </>
-      );
-    }
-
-    return (
-      <>
-        {currentModel?.icon && (
-          <Image
-            src={currentModel.icon}
-            alt="Model icon"
-            width={15}
-            height={15}
-            draggable={false}
-            className={`${
-              currentModel.icon.includes("openai") ||
-              currentModel.icon.includes("anthropic")
-                ? "dark:invert"
-                : ""
-            }`}
-          />
-        )}
-        {!modelsReadOnly && "Models"}
-      </>
-    );
-  };
-
   return (
     <div className="flex flex-col gap-2">
       {showMaxUsageDialog && (
@@ -476,45 +464,11 @@ export default function ChatBar({
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="text-gray-600 h-8 hover:text-gray-700 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px] rounded-full shrink-0 text-xs px-3 py-1 inline-flex items-center gap-1.5"
-                      disabled={modelsReadOnly}
-                    >
-                      {renderModelButtonContent()}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    className="w-[200px] rounded-xl"
-                    align="start"
-                    side={isMobile ? "top" : "right"}
-                  >
-                    {models.map((m) => (
-                      <DropdownMenuItem
-                        key={m.id}
-                        className="p-2.5 cursor-pointer rounded-xl flex items-center"
-                        onClick={() => setModel(m.id)}
-                      >
-                        <Image
-                          src={m.icon}
-                          alt={m.name}
-                          width={18}
-                          height={18}
-                          className={`mr-1 ${
-                            m.icon.includes("openai") ||
-                            m.icon.includes("anthropic")
-                              ? "dark:invert"
-                              : ""
-                          }`}
-                        />
-                        {m.name}
-                        {model === m.id && <span className="ml-auto">✓</span>}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <ModelSelector
+                  model={model}
+                  setModel={setModel}
+                  disabled={modelsReadOnly}
+                />
 
                 <VoiceInput onTranscription={handleTranscription} />
 
