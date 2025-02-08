@@ -179,6 +179,12 @@ export const models: Model[] = [
         color: "#0BA37F",
       },
       {
+        name: "Speed",
+        description: "Very fast model",
+        icon: ZapIcon,
+        color: "#FFA726",
+      },
+      {
         name: "Reasoning",
         description: "Supports reasoning",
         icon: BrainIcon,

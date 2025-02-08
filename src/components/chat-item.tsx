@@ -113,17 +113,15 @@ const ChatItem = ({
   };
 
   return (
-    <div
-      className={`flex items-center justify-between p-[7px] rounded-md text-sm hover:bg-[#f0f0f1] dark:hover:bg-[#27272A] group/item ${
+    <Link
+      href={`/chat/${chatId}`}
+      onClick={handleChatClick}
+      className={`flex items-center justify-between p-[6px] rounded-md text-sm hover:bg-[#f0f0f1] dark:hover:bg-[#27272A] group/item ${
         isActive ? "bg-[#e1e1e1] dark:bg-[#27272A]" : ""
       }`}
     >
       {!isEditing ? (
-        <Link
-          href={`/chat/${chatId}`}
-          onClick={handleChatClick}
-          className="flex items-center gap-2 p-0.5 min-w-0 flex-1 focus:outline-none ml-1"
-        >
+        <div className="flex items-center gap-2 p-0.5 min-w-0 flex-1 focus:outline-none ml-1">
           {models.find((m) => m.id === modelId)?.icon && (
             <Image
               src={models.find((m) => m.id === modelId)!.icon}
@@ -140,7 +138,7 @@ const ChatItem = ({
             />
           )}
           <span className="truncate">{editedTitle}</span>
-        </Link>
+        </div>
       ) : (
         <div className="flex items-center gap-2 p-0.5 min-w-0 flex-1 focus:outline-none ml-1">
           {models.find((m) => m.id === modelId)?.icon && (
@@ -174,7 +172,10 @@ const ChatItem = ({
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
           <button
-            onClick={(e) => e.preventDefault()}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
             className={`p-1 focus:outline-none flex-shrink-0 opacity-0 ${
               isActive || isOpen ? "opacity-100" : ""
             } group-hover/item:opacity-100 transition-opacity duration-200 ease-in-out`}
@@ -188,6 +189,7 @@ const ChatItem = ({
           align="start"
           sideOffset={-10}
           alignOffset={20}
+          onClick={(e) => e.stopPropagation()}
         >
           {/* <DropdownMenuItem className="cursor-pointer rounded-xl p-2.5">
             <div className="flex items-center justify-between gap-2">
@@ -244,7 +246,7 @@ const ChatItem = ({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </div>
+    </Link>
   );
 };
 
