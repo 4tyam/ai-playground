@@ -6,6 +6,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { models } from "@/lib/models";
 import FormattedMessage from "./formatted-message";
+import { useSidebar } from "@/components/ui/sidebar";
 
 type Message = {
   id: string;
@@ -27,6 +28,7 @@ export default function ChatMessages({
   onMessagesUpdate,
 }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { state } = useSidebar();
 
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
@@ -35,7 +37,16 @@ export default function ChatMessages({
   }, [messages, onMessagesUpdate]);
 
   return (
-    <div className="space-y-2.5 px-4 md:px-12 lg:px-24 xl:px-48 pt-3 pb-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 light:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent">
+    <div
+      className={cn(
+        "space-y-2.5 px-4 pt-3 pb-4",
+        "transition-[padding] duration-300",
+        state === "expanded"
+          ? "md:px-12 lg:px-24 xl:px-48"
+          : "md:px-32 lg:px-64 xl:px-72",
+        "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 light:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent"
+      )}
+    >
       {messages.map((message) => (
         <div
           key={message.id}

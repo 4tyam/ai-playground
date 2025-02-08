@@ -1,6 +1,5 @@
 import { AppSidebar } from "@/components/sidebar/app-sidebar";
-import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
+
 import {
   SidebarInset,
   SidebarProvider,
@@ -36,7 +35,7 @@ export default async function ChatLayout({
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center justify-between gap-2  px-4 pr-8">
           <div className="flex items-center gap-2">
-            <div className="sm:hidden">
+            <div className="">
               <TooltipProvider>
                 <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>
@@ -54,11 +53,6 @@ export default async function ChatLayout({
                 </Tooltip>
               </TooltipProvider>
             </div>
-
-            {/* <Separator orientation="vertical" className="mr-2 h-4" />
-          <Breadcrumb className="text-sm sm:text-base">
-            Data Fetching
-          </Breadcrumb> */}
           </div>
           <div>
             <UserButton />
