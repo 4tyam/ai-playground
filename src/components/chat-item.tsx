@@ -116,7 +116,7 @@ const ChatItem = ({
     <Link
       href={`/chat/${chatId}`}
       onClick={handleChatClick}
-      className={`flex items-center justify-between p-[6px] rounded-md text-sm hover:bg-[#f0f0f1] dark:hover:bg-[#27272A] group/item ${
+      className={`flex items-center justify-between p-[6px] mt-0.5 rounded-md text-sm hover:bg-[#f0f0f1] dark:hover:bg-[#27272A] group/item ${
         isActive ? "bg-[#e1e1e1] dark:bg-[#27272A]" : ""
       }`}
     >

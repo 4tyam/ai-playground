@@ -7,7 +7,6 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
@@ -16,6 +15,7 @@ import ChatItem from "../chat-item";
 import { getChats } from "@/lib/actions";
 import { Loader2Icon, MessagesSquareIcon } from "lucide-react";
 import { isToday, isYesterday, isThisWeek, isThisMonth } from "date-fns";
+import { usePathname } from "next/navigation";
 
 // Add this interface before GroupedChats
 interface Chat {
@@ -41,6 +41,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [page, setPage] = React.useState(1);
   const [hasMore, setHasMore] = React.useState(true);
   const [isLoading, setIsLoading] = React.useState(false);
+  const pathname = usePathname();
+
+  const refreshChats = React.useCallback(async () => {
+    setIsLoading(true);
+    setPage(1);
+    try {
+      const result = await getChats(1, 40, false);
+      setChats(result.chats);
+      setHasMore(result.hasMore);
+    } catch (error) {
+      console.error("Error refreshing chats:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Add this effect to refresh chats when pathname changes
+  React.useEffect(() => {
+    refreshChats();
+  }, [pathname, refreshChats]);
 
   const loadMoreChats = React.useCallback(async () => {
     if (isLoading || (!hasMore && page !== 1)) return;
