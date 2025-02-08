@@ -7,12 +7,7 @@ import {
   DropdownMenuSeparator,
 } from "./ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import {
-  LogOut,
-  Download,
-  Sparkles,
-  Chrome,
-} from "lucide-react";
+import { LogOut, Sparkles } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { SettingsDialog } from "./settings-dialog";
 
@@ -30,22 +25,14 @@ const UserButton = async () => {
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-[230px] mr-4 rounded-xl">
           <ThemeToggle />
-          <SettingsDialog />
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="p-2.5 cursor-pointer rounded-xl">
-            <Download className="mr-2" />
-            Download the macOS app
-          </DropdownMenuItem>
           <DropdownMenuItem className="p-2.5 cursor-pointer rounded-xl">
             <Sparkles className="mr-2" />
             Upgrade Plan
           </DropdownMenuItem>
-          <DropdownMenuItem className="p-2.5 cursor-pointer rounded-xl">
-            <Chrome className="mr-2" />
-            Get ChatGPT search extension
-          </DropdownMenuItem>
           <DropdownMenuSeparator />
-        
+          <SettingsDialog />
+          <DropdownMenuSeparator />
+
           <DropdownMenuItem asChild className="p-2.5 cursor-pointer rounded-xl">
             <form
               action={async () => {

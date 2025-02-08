@@ -53,6 +53,7 @@ export const POST = async (req: Request) => {
     prompt,
     chatId,
     model: requestModel,
+    maxTokens,
     provider,
     messages,
   } = await req.json();
@@ -105,7 +106,7 @@ export const POST = async (req: Request) => {
           throw new Error(`Unsupported provider: ${provider}`);
         }
       })(),
-      maxTokens: 1400,
+      maxTokens: maxTokens || 2000,
       messages: [...messageHistory, { role: "user", content: messageContent }],
     });
 

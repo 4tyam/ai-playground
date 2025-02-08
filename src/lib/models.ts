@@ -31,6 +31,7 @@ export const models: Model[] = [
     icon: "/ai-models/openai.svg",
     provider: "openai",
     company: "OpenAI",
+    maxTokens: 8000,
     pricing: {
       input: "0.00000015",
       output: "0.0000006",
@@ -57,6 +58,7 @@ export const models: Model[] = [
     icon: "/ai-models/openai.svg",
     provider: "openai",
     company: "OpenAI",
+    maxTokens: 1500,
     pricing: {
       input: "0.0000025",
       output: "0.00001",
@@ -83,6 +85,7 @@ export const models: Model[] = [
     icon: "/ai-models/openai.svg",
     provider: "openai",
     company: "OpenAI",
+    maxTokens: 3000,
     pricing: {
       input: "0.0000011",
       output: "0.0000044",
@@ -109,6 +112,7 @@ export const models: Model[] = [
     icon: "/ai-models/anthropic.svg",
     provider: "anthropic",
     company: "Anthropic",
+    maxTokens: 3000,
     pricing: {
       input: "0.0000008",
       output: "0.000004",
@@ -135,6 +139,7 @@ export const models: Model[] = [
     icon: "/ai-models/anthropic.svg",
     provider: "anthropic",
     company: "Anthropic",
+    maxTokens: 1250,
     pricing: {
       input: "0.000003",
       output: "0.000015",
@@ -161,11 +166,12 @@ export const models: Model[] = [
     icon: "/ai-models/deepseek.png",
     provider: "groq",
     company: "DeepSeek",
+    maxTokens: 10000,
     pricing: {
       input: "0.000002",
       output: "0.000002",
     },
-    info: "A faster version of Deepseek R1, distilled on Llama 3.3 70B running on groq hardware",
+    info: "A faster version of Deepseek R1, distilled on Llama 3.3 70B running on groq hardware in US datacenters",
     tags: [
       {
         name: "Price",
@@ -187,6 +193,7 @@ export const models: Model[] = [
     icon: "/ai-models/mistral.svg",
     provider: "groq",
     company: "Mistral",
+    maxTokens: 25000,
     pricing: {
       input: "0.00000024",
       output: "0.00000024",
@@ -212,6 +219,7 @@ export const models: Model[] = [
     icon: "/ai-models/meta.svg",
     provider: "groq",
     company: "Meta",
+    maxTokens: 40000,
     pricing: {
       input: "0.0000005",
       output: "0.0000005",
@@ -238,6 +246,7 @@ export const models: Model[] = [
     icon: "/ai-models/meta.svg",
     provider: "groq",
     company: "Meta",
+    maxTokens: 20000,
     pricing: {
       input: "0.00000059",
       output: "0.00000099",
@@ -264,6 +273,7 @@ export const models: Model[] = [
     icon: "/ai-models/googlegemini.svg",
     provider: "google",
     company: "Google",
+    maxTokens: 20000,
     pricing: {
       input: "0.0000001",
       output: "0.0000004",
@@ -290,6 +300,7 @@ export const models: Model[] = [
     icon: "/ai-models/googlegemini.svg",
     provider: "google",
     company: "Google",
+    maxTokens: 40000,
     pricing: {
       input: "0.00000005",
       output: "0.0000002",

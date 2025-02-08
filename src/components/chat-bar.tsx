@@ -241,6 +241,7 @@ export default function ChatBar({
           prompt: currentMessage,
           chatId: params?.chatId,
           model: currentModel.id,
+          maxTokens: currentModel.maxTokens,
           provider: currentModel.provider,
         }),
       });

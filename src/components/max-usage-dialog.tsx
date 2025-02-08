@@ -21,7 +21,7 @@ export default function MaxUsageDialog({ onClose }: MaxUsageDialogProps) {
               <p className="text-sm font-medium">Usage Limit Exceeded</p>
               <p className="text-sm text-muted-foreground">
                 You have reached your maximum usage limit. Please upgrade your
-                plan or add balance to continue using the service.
+                plan or add balance to continue sending messages.
               </p>
             </div>
             <div className="flex gap-2">
