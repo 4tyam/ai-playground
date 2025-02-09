@@ -77,7 +77,7 @@ export const models: Model[] = [
         color: "#2196F3",
       },
     ],
-    color: "#F3AC35",
+    color: "#01780f",
   },
   {
     name: "o1-mini",
@@ -217,7 +217,7 @@ export const models: Model[] = [
         color: "#FFA726",
       },
     ],
-    color: "#FF0008",
+    color: "#f5a300",
   },
   {
     name: "Llama 3.1 8B",

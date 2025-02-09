@@ -25,12 +25,12 @@ const UserButton = async () => {
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-[230px] mr-4 rounded-xl">
           <ThemeToggle />
+          <SettingsDialog />
+          <DropdownMenuSeparator />
           <DropdownMenuItem className="p-2.5 cursor-pointer rounded-xl">
             <Sparkles className="mr-2" />
             Upgrade Plan
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <SettingsDialog />
           <DropdownMenuSeparator />
 
           <DropdownMenuItem asChild className="p-2.5 cursor-pointer rounded-xl">
