@@ -46,10 +46,12 @@ const ChatItem = ({
   const { setOpenMobile, isMobile } = useSidebar();
   const router = useRouter();
 
-  const handleChatClick = () => {
+  const handleChatClick = (e: React.MouseEvent) => {
+    e.preventDefault();
     if (isMobile) {
       setOpenMobile(false);
     }
+    router.push(`/chat/${chatId}`);
   };
 
   const handleStartEditing = (e: React.MouseEvent) => {

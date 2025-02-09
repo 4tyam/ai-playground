@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { VList } from "virtua";
+import { VList, VListHandle } from "virtua";
 import {
   Sidebar,
   SidebarContent,
@@ -16,6 +16,7 @@ import { getChats } from "@/lib/actions";
 import { Loader2Icon, MessagesSquareIcon } from "lucide-react";
 import { isToday, isYesterday, isThisWeek, isThisMonth } from "date-fns";
 import { usePathname } from "next/navigation";
+import { useEventEmitter } from "@/hooks/use-event-emitter";
 
 // Add this interface before GroupedChats
 interface Chat {
@@ -42,6 +43,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [hasMore, setHasMore] = React.useState(true);
   const [isLoading, setIsLoading] = React.useState(false);
   const pathname = usePathname();
+  const scrollPositionRef = React.useRef<number>(0);
+  const listRef = React.useRef<VListHandle>(null);
 
   const refreshChats = React.useCallback(async () => {
     setIsLoading(true);
@@ -57,10 +60,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   }, []);
 
-  // Add this effect to refresh chats when pathname changes
+  // Store scroll position before navigation
+  const handleScroll = React.useCallback((offset: number) => {
+    scrollPositionRef.current = offset;
+  }, []);
+
+  // Restore scroll position after navigation
   React.useEffect(() => {
-    refreshChats();
-  }, [pathname, refreshChats]);
+    if (listRef.current && scrollPositionRef.current) {
+      listRef.current.scrollTo(scrollPositionRef.current);
+    }
+  }, [pathname]);
 
   const loadMoreChats = React.useCallback(async () => {
     if (isLoading || (!hasMore && page !== 1)) return;
@@ -236,6 +246,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   };
 
+  // Add event listener for chat refresh
+  React.useEffect(() => {
+    const unsubscribe = useEventEmitter.on("chats:refresh", () => {
+      refreshChats();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [refreshChats]);
+
   return (
     <Sidebar className="border-none" {...props}>
       <SidebarHeader className="border-none">
@@ -258,9 +279,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </div>
             ) : (
               <VList
+                ref={listRef}
+                key="chat-list"
                 className="flex flex-col h-full [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 light:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent"
                 overscan={20}
                 onScrollEnd={hasMore ? loadMoreChats : undefined}
+                onScroll={handleScroll}
               >
                 {virtualItems.map((item, index) => (
                   <div

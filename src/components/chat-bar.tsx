@@ -27,6 +27,7 @@ import { models } from "@/lib/models";
 import MaxUsageDialog from "@/components/max-usage-dialog";
 import { VoiceInput } from "@/components/voice-input";
 import { ModelSelector } from "@/components/model-selector";
+import { useEventEmitter } from "@/hooks/use-event-emitter";
 
 type FilePreview = {
   url: string;
@@ -294,6 +295,8 @@ export default function ChatBar({
 
       // Only redirect if we're creating a new chat (no params passed)
       if (!params?.chatId && chatId) {
+        // Emit event before navigation
+        useEventEmitter.emit("chats:refresh");
         router.push(`/chat/${chatId}`);
       }
     } catch (error) {
