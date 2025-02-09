@@ -29,20 +29,38 @@ export default function ChatMessages({
 }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { state } = useSidebar();
+  const previousMessageCountRef = useRef(messages.length);
+  const isInitialLoadRef = useRef(true);
 
-  // Auto scroll to bottom when new messages arrive or when streaming updates occur
+  // Scroll to bottom on initial load
+  useEffect(() => {
+    if (
+      isInitialLoadRef.current &&
+      messagesEndRef.current &&
+      messages.length > 0
+    ) {
+      messagesEndRef.current.scrollIntoView();
+      isInitialLoadRef.current = false;
+    }
+  }, [messages.length]);
+
+  // Auto scroll to bottom only when new messages are added, not during streaming
   useEffect(() => {
     const scrollToBottom = () => {
-      if (messagesEndRef.current) {
-        const behavior = messages[messages.length - 1]?.pending
-          ? "auto"
-          : "smooth";
-        messagesEndRef.current.scrollIntoView({ behavior });
+      if (messagesEndRef.current && !isInitialLoadRef.current) {
+        // Only scroll if a new message was added (not during streaming)
+        if (messages.length > previousMessageCountRef.current) {
+          const behavior = messages[messages.length - 1]?.pending
+            ? "auto"
+            : "smooth";
+          messagesEndRef.current.scrollIntoView({ behavior });
+        }
       }
     };
 
     scrollToBottom();
     onMessagesUpdate?.(messages);
+    previousMessageCountRef.current = messages.length;
   }, [messages, onMessagesUpdate]);
 
   return (
