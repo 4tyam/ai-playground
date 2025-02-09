@@ -1,4 +1,4 @@
-import { generateText } from "ai";
+import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { groq } from "@ai-sdk/groq";
@@ -80,19 +80,61 @@ export const POST = async (req: Request) => {
         })
         .from(messagesTable)
         .where(eq(messagesTable.chatId, chatId))
-        .orderBy(desc(messagesTable.sentAt)) // Get newest first
-        .limit(10); // Limit to last 10 messages
+        .orderBy(desc(messagesTable.sentAt))
+        .limit(10);
 
-      messageHistory = previousMessages
-        .reverse() // Reverse to get correct chronological order
-        .map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        }));
+      messageHistory = previousMessages.reverse().map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      }));
     }
 
-    // Generate AI response with context based on provider
-    const { text, usage } = await generateText({
+    let currentChatId = chatId;
+
+    if (!currentChatId) {
+      // Create a new chat if we don't have one
+      const [newChat] = await db
+        .insert(chats)
+        .values({
+          userId: session.user.id as string,
+          model: requestModel,
+          title: messageContent.slice(0, 100),
+        })
+        .returning({ id: chats.id });
+
+      currentChatId = newChat.id;
+    } else {
+      // Verify chat exists and belongs to user
+      const existingChat = await db
+        .select({ id: chats.id })
+        .from(chats)
+        .where(
+          and(
+            eq(chats.id, currentChatId),
+            eq(chats.userId, session.user.id as string)
+          )
+        )
+        .limit(1);
+
+      if (!existingChat.length) {
+        return new NextResponse("Chat not found", { status: 404 });
+      }
+    }
+
+    // Insert user message
+    await db.insert(messagesTable).values({
+      chatId: currentChatId,
+      senderId: session.user.id as string,
+      content: messageContent,
+      role: "user",
+    });
+
+    // Initialize variables for collecting the full response
+    let fullText = "";
+    let finalUsage = { promptTokens: 0, completionTokens: 0 };
+
+    // Create stream
+    const stream = streamText({
       model: (() => {
         if (provider === "anthropic") {
           return anthropic(requestModel);
@@ -108,101 +150,99 @@ export const POST = async (req: Request) => {
       })(),
       maxTokens: maxTokens || 2000,
       messages: [...messageHistory, { role: "user", content: messageContent }],
-    });
-
-    // Calculate cost of this request
-    const cost = calculateCost(
-      requestModel,
-      usage.promptTokens,
-      usage.completionTokens
-    );
-
-    // Check if this would exceed the user's limit
-    // if (Number(usageAmount) + Number(cost) > Number(maxAmount)) {
-    //   return new NextResponse("Usage limit exceeded", { status: 403 });
-    // }
-
-    let currentChatId = chatId;
-
-    if (currentChatId) {
-      // We're in a specific chat page, verify chat exists and belongs to user
-      const existingChat = await db
-        .select({ id: chats.id })
-        .from(chats)
-        .where(
-          and(
-            eq(chats.id, currentChatId),
-            eq(chats.userId, session.user.id as string)
-          )
-        )
-        .limit(1);
-
-      if (!existingChat.length) {
-        return new NextResponse("Chat not found", { status: 404 });
-      }
-    } else {
-      // We're on the main chat page, create a new chat
-      const [newChat] = await db
-        .insert(chats)
-        .values({
-          userId: session.user.id as string,
-          model: requestModel,
-          title: messageContent.slice(0, 100),
-        })
-        .returning({ id: chats.id });
-
-      currentChatId = newChat.id;
-    }
-
-    // Insert user message
-    await db.insert(messagesTable).values({
-      chatId: currentChatId,
-      senderId: session.user.id as string,
-      content: messageContent,
-      role: "user",
-    });
-
-    // Insert AI response and get its ID
-    const [assistantMessage] = await db
-      .insert(messagesTable)
-      .values({
-        chatId: currentChatId,
-        senderId: session.user.id as string,
-        content: text,
-        role: "assistant",
-      })
-      .returning({ id: messagesTable.id });
-
-    // Update user's usage amount and create usage log
-    await db.transaction(async (tx) => {
-      // Update user's total usage
-      await tx
-        .update(users)
-        .set({
-          usageAmount: (Number(usageAmount) + Number(cost)).toFixed(20),
-        })
-        .where(eq(users.id, session?.user?.id as string));
-
-      // Create usage log entry
-      await tx.insert(usageLogs).values({
-        userId: session?.user?.id as string,
-        userEmail: session?.user?.email as string,
-        userName: session?.user?.name as string,
-        messageId: assistantMessage.id,
-        model: requestModel,
-        promptTokens: usage.promptTokens,
-        completionTokens: usage.completionTokens,
-        totalCost: cost,
-      });
-    });
-
-    return NextResponse.json({
-      message: text,
-      chatId: currentChatId,
-      usage: {
-        ...usage,
-        cost,
+      onStepFinish(event) {
+        if ("tokens" in event) {
+          fullText += event.tokens;
+        }
       },
+      onFinish({ text, usage }) {
+        finalUsage = usage;
+
+        // Handle completion here instead of using response.finally
+        (async () => {
+          try {
+            // Ensure we still have session data
+            const userId = session?.user?.id;
+            const userEmail = session?.user?.email;
+            const userName = session?.user?.name;
+
+            if (!userId || !userEmail || !userName) {
+              console.error("Session data missing during completion");
+              return;
+            }
+
+            // Calculate cost
+            const cost = calculateCost(
+              requestModel,
+              finalUsage.promptTokens,
+              finalUsage.completionTokens
+            );
+
+            // Insert AI response
+            const [assistantMessage] = await db
+              .insert(messagesTable)
+              .values({
+                chatId: currentChatId,
+                senderId: userId,
+                content: text,
+                role: "assistant",
+              })
+              .returning({ id: messagesTable.id });
+
+            // Update user's usage amount and create usage log
+            await db.transaction(async (tx) => {
+              await tx
+                .update(users)
+                .set({
+                  usageAmount: (Number(usageAmount) + Number(cost)).toFixed(20),
+                })
+                .where(eq(users.id, userId));
+
+              await tx.insert(usageLogs).values({
+                userId,
+                userEmail,
+                userName,
+                messageId: assistantMessage.id,
+                model: requestModel,
+                promptTokens: finalUsage.promptTokens,
+                completionTokens: finalUsage.completionTokens,
+                totalCost: cost,
+              });
+            });
+          } catch (error) {
+            console.error("Error saving streamed response:", error);
+          }
+        })();
+      },
+    });
+
+    // Create a ReadableStream that we can send to the client
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of stream.textStream) {
+            // Send each chunk as a server-sent event
+            const data = JSON.stringify({ tokens: chunk });
+            controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+          }
+          controller.close();
+        } catch (error) {
+          controller.error(error);
+        }
+      },
+    });
+
+    // Add chatId to response headers
+    const headers = new Headers();
+    headers.set("X-Chat-Id", currentChatId);
+    headers.set("Content-Type", "text/event-stream");
+    headers.set("Cache-Control", "no-cache");
+    headers.set("Connection", "keep-alive");
+
+    return new Response(readable, {
+      headers,
+      status: 200,
     });
   } catch (error) {
     console.error("Error in chat route:", error);

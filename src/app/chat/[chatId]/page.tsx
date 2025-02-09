@@ -73,25 +73,37 @@ const ChatIdPage = ({ params }: { params: Promise<{ chatId: string }> }) => {
       };
       setMessages((prev) => [...prev, userMsg]);
     } else {
-      // This is the update with the AI response
-      // Replace the last two messages (if they were temporary) with the final versions
+      // This is an update with the AI response
       setMessages((prev) => {
-        const withoutTemp = prev.filter((msg) => !msg.id.startsWith("temp-"));
-        return [
-          ...withoutTemp,
-          {
-            id: crypto.randomUUID(),
-            content: userMessage,
-            role: "user",
-            sentAt: new Date(),
-          },
-          {
-            id: crypto.randomUUID(),
-            content: aiMessage,
-            role: "assistant",
-            sentAt: new Date(),
-          },
-        ];
+        // Find the last user message and any existing AI message
+        const lastUserMessageIndex = prev.findLastIndex(
+          (msg) => msg.role === "user"
+        );
+        const hasAIMessage = lastUserMessageIndex < prev.length - 1;
+
+        if (hasAIMessage) {
+          // If we already have an AI message, update it
+          return prev.map((msg, index) => {
+            if (index > lastUserMessageIndex) {
+              return {
+                ...msg,
+                content: aiMessage,
+              };
+            }
+            return msg;
+          });
+        } else {
+          // If we don't have an AI message yet, add it
+          return [
+            ...prev,
+            {
+              id: crypto.randomUUID(),
+              content: aiMessage,
+              role: "assistant",
+              sentAt: new Date(),
+            },
+          ];
+        }
       });
     }
   };

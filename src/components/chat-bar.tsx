@@ -257,14 +257,44 @@ export default function ChatBar({
         }
       }
 
-      const data = await response.json();
+      const chatId = response.headers.get("X-Chat-Id");
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedMessage = "";
 
-      // Update with AI response
-      onMessageSent?.(currentMessage, data.message, true);
+      if (!reader) {
+        throw new Error("No reader available");
+      }
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.trim() === "") continue;
+
+          try {
+            if (line.startsWith("data: ")) {
+              const data = JSON.parse(line.slice(6));
+              if (data.tokens) {
+                accumulatedMessage += data.tokens;
+                // Update the UI with the accumulated message
+                onMessageSent?.(currentMessage, accumulatedMessage, true);
+              }
+            }
+          } catch (e) {
+            // Ignore parsing errors as some chunks might be incomplete
+            continue;
+          }
+        }
+      }
 
       // Only redirect if we're creating a new chat (no params passed)
-      if (!params?.chatId && data.chatId) {
-        router.push(`/chat/${data.chatId}`);
+      if (!params?.chatId && chatId) {
+        router.push(`/chat/${chatId}`);
       }
     } catch (error) {
       toast.error("Failed to send message");

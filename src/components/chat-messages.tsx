@@ -30,9 +30,18 @@ export default function ChatMessages({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { state } = useSidebar();
 
-  // Auto scroll to bottom when new messages arrive
+  // Auto scroll to bottom when new messages arrive or when streaming updates occur
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const scrollToBottom = () => {
+      if (messagesEndRef.current) {
+        const behavior = messages[messages.length - 1]?.pending
+          ? "auto"
+          : "smooth";
+        messagesEndRef.current.scrollIntoView({ behavior });
+      }
+    };
+
+    scrollToBottom();
     onMessagesUpdate?.(messages);
   }, [messages, onMessagesUpdate]);
 
@@ -86,8 +95,7 @@ export default function ChatMessages({
           <Card
             className={cn(
               "flex min-h-[40px] py-2 px-3 sm:py-2.5 text-sm sm:text-base shadow-none border-none max-w-[85%]",
-              message.role === "user" && "ml-auto bg-muted px-4 py-2.5",
-              message.pending && "opacity-50"
+              message.role === "user" && "ml-auto bg-muted px-4 py-2.5"
             )}
           >
             <FormattedMessage content={message.content} />

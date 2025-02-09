@@ -225,7 +225,7 @@ export const models: Model[] = [
     icon: "/ai-models/meta.svg",
     provider: "groq",
     company: "Meta",
-    maxTokens: 40000,
+    maxTokens: 8000,
     pricing: {
       input: "0.0000005",
       output: "0.0000005",
