@@ -341,17 +341,26 @@ export default function ChatBar({
         )}
 
         <Card
-          className={`dark:bg-[#18181B] ${
+          className={`dark:bg-[#18181B] border ${
             isDragActive
-              ? "border border-dashed border-black dark:border-white"
-              : ""
-          }`}
+              ? "border-dashed border-black dark:border-white"
+              : isLoading
+              ? "loading-border"
+              : "border-border"
+          } ${isLoading ? "opacity-50" : ""}`}
         >
           <CardContent
             className="p-3.5 relative"
             onClick={handleCardClick}
             {...getRootProps()}
           >
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center z-10">
+                <p className="text-loading font-medium text-lg">
+                  Generating...
+                </p>
+              </div>
+            )}
             {isDragActive && (
               <div className="absolute inset-0 bg-primary/10 rounded-lg z-10 flex items-center justify-center">
                 <p className="text-primary font-medium">Drop files here</p>
@@ -444,6 +453,7 @@ export default function ChatBar({
                   onKeyDown={handleKeyDown}
                   wrap="soft"
                   rows={1}
+                  disabled={isLoading}
                 />
               </ScrollArea>
 
@@ -457,6 +467,7 @@ export default function ChatBar({
                       variant="outline"
                       size="icon"
                       className="rounded-full size-8 shrink-0 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px]"
+                      disabled={isLoading}
                     >
                       <Plus className="size-3" />
                       <span className="sr-only">Add</span>
@@ -501,7 +512,7 @@ export default function ChatBar({
                 <ModelSelector
                   model={model}
                   setModel={setModel}
-                  disabled={modelsReadOnly}
+                  disabled={modelsReadOnly || isLoading}
                 />
 
                 <VoiceInput onTranscription={handleTranscription} />
@@ -514,7 +525,11 @@ export default function ChatBar({
                   className="rounded-full size-9 bg-black hover:bg-black/90 dark:bg-white dark:hover:bg-white/90 shrink-0"
                   disabled={isLoading}
                 >
-                  <SendHorizonalIcon className="size-4 text-white dark:text-black" />
+                  {isLoading ? (
+                    <Loader2 className="size-4 text-white dark:text-black animate-spin" />
+                  ) : (
+                    <SendHorizonalIcon className="size-4 text-white dark:text-black" />
+                  )}
                   <span className="sr-only">Send</span>
                 </Button>
               </div>
