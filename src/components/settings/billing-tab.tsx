@@ -18,7 +18,6 @@ type Plan = "free" | "pro";
 type PlanDetails = {
   name: string;
   description: string;
-  features: string[];
   price: string;
 };
 
@@ -26,13 +25,11 @@ const plans: Record<Plan, PlanDetails> = {
   free: {
     name: "Free",
     description: "For personal use",
-    features: ["5 chats per day", "Basic models", "Email support"],
     price: "$0/month",
   },
   pro: {
     name: "Pro",
     description: "For power users",
-    features: ["Unlimited chats", "All models", "Priority support"],
     price: "$10/month",
   },
 };
@@ -105,25 +102,11 @@ export function BillingTab() {
           </div>
           <p className="font-medium">{plan.price}</p>
         </div>
-
-        <div className="mt-4 space-y-2">
-          {plan.features.map((feature) => (
-            <p key={feature} className="text-sm text-muted-foreground">
-              • {feature}
-            </p>
-          ))}
-        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
-        <Button className="rounded-xl px-5 py-1 h-9">Upgrade plan</Button>
-        <Button
-          variant="outline"
-          className="rounded-xl px-5 py-1 h-9"
-          onClick={() =>
-            window.open("https://billing.stripe.com/p/login/test", "_blank")
-          }
-        >
+        <Button className="rounded-xl px-5 py-1 h-8">Upgrade plan</Button>
+        <Button variant="outline" className="rounded-xl px-5 py-1 h-8">
           Billing portal
           <ExternalLink className="ml-1 size-3" />
         </Button>
