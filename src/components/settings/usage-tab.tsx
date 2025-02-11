@@ -95,9 +95,7 @@ export default function UsageTab() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Skeleton className="h-[160px] rounded-xl" />
-          <Skeleton className="h-[160px] rounded-xl" />
+        <div className="grid grid-cols-1 gap-4">
           <Skeleton className="h-[160px] rounded-xl" />
         </div>
         <Skeleton className="h-[300px] rounded-xl" />

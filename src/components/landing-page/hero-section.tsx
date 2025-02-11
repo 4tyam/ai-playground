@@ -5,7 +5,7 @@ import { ContainerIcon, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type ModelProvider = {
   name: string;
@@ -52,7 +52,9 @@ export function HeroSection() {
         transition={{ duration: 0.5 }}
         className="flex items-center justify-between max-w-7xl mx-auto w-full"
       >
-        <span className="text-xl sm:text-2xl font-bold">ai playground</span>
+        <Link href="/" className="text-xl sm:text-2xl font-bold">
+          ai playground
+        </Link>
         <div className="flex items-center gap-4">
           <a
             href="#"
