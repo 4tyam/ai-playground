@@ -17,8 +17,14 @@ import { calculateCost } from "@/lib/pricing";
 
 // Add Message type
 type Message = {
-  role: "user" | "assistant";
-  content: string;
+  role: "user" | "assistant" | "system";
+  content:
+    | string
+    | {
+        type: "text" | "image";
+        text?: string;
+        image?: URL;
+      }[];
 };
 
 export const POST = async (req: Request) => {
@@ -50,27 +56,20 @@ export const POST = async (req: Request) => {
   }
 
   const {
-    prompt,
-    chatId,
+    messages,
+    data,
     model: requestModel,
     maxTokens,
     provider,
-    messages,
+    chatId,
   } = await req.json();
 
-  // Ensure we have a valid message content and model
-  const messageContent = prompt || messages?.[0]?.content;
-
-  if (!messageContent) {
-    return new NextResponse("Message content is required", { status: 400 });
-  }
-
-  if (!requestModel || !provider) {
-    return new NextResponse("Model and provider are required", { status: 400 });
+  if (!messages?.length || !requestModel || !provider) {
+    return new NextResponse("Missing required fields", { status: 400 });
   }
 
   try {
-    // If we have a chatId, get previous messages for context
+    // Get previous messages for context
     let messageHistory: Message[] = [];
     if (chatId) {
       const previousMessages = await db
@@ -84,21 +83,57 @@ export const POST = async (req: Request) => {
         .limit(10);
 
       messageHistory = previousMessages.reverse().map((msg) => ({
-        role: msg.role,
+        role: msg.role as "user" | "assistant" | "system",
         content: msg.content,
       }));
     }
 
     let currentChatId = chatId;
+    const currentMessage = messages[messages.length - 1];
+
+    // Structure the current message with images if present
+    let formattedMessage: Message;
+    if (data?.imageUrls?.length) {
+      formattedMessage = {
+        role: "user",
+        content: [
+          { type: "text", text: currentMessage.content },
+          ...data.imageUrls.map((imageUrl: string) => ({
+            type: "image",
+            image: new URL(imageUrl),
+          })),
+        ],
+      };
+    } else {
+      formattedMessage = {
+        role: "user",
+        content: currentMessage.content,
+      };
+    }
+
+    // Add a system message if not present
+    const systemMessage: Message = {
+      role: "system",
+      content: "You are a helpful AI assistant.",
+    };
+
+    const allMessages = [
+      systemMessage,
+      ...messageHistory,
+      ...messages.slice(0, -1),
+      formattedMessage,
+    ];
 
     if (!currentChatId) {
-      // Create a new chat if we don't have one
       const [newChat] = await db
         .insert(chats)
         .values({
           userId: session.user.id as string,
           model: requestModel,
-          title: messageContent.slice(0, 100),
+          title:
+            typeof formattedMessage.content === "string"
+              ? formattedMessage.content.slice(0, 100)
+              : formattedMessage.content[0].text?.slice(0, 100) || "New Chat",
         })
         .returning({ id: chats.id });
 
@@ -125,15 +160,17 @@ export const POST = async (req: Request) => {
     await db.insert(messagesTable).values({
       chatId: currentChatId,
       senderId: session.user.id as string,
-      content: messageContent,
+      content:
+        typeof formattedMessage.content === "string"
+          ? formattedMessage.content
+          : JSON.stringify(formattedMessage.content),
       role: "user",
     });
 
-    // Initialize variables for collecting the full response
+    // Initialize streaming response
     let fullText = "";
     let finalUsage = { promptTokens: 0, completionTokens: 0 };
 
-    // Create stream
     const stream = streamText({
       model: (() => {
         if (provider === "anthropic") {
@@ -149,7 +186,7 @@ export const POST = async (req: Request) => {
         }
       })(),
       maxTokens: maxTokens || 2000,
-      messages: [...messageHistory, { role: "user", content: messageContent }],
+      messages: allMessages,
       onStepFinish(event) {
         if ("tokens" in event) {
           fullText += event.tokens;

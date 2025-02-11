@@ -10,6 +10,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
+import Image from "next/image";
+import { ImageDialog } from "@/components/image-dialog";
 
 interface CodeProps extends ComponentPropsWithoutRef<"code"> {
   inline?: boolean;
@@ -17,6 +19,15 @@ interface CodeProps extends ComponentPropsWithoutRef<"code"> {
 
 export default function FormattedMessage({ content }: { content: string }) {
   const [showReasoning, setShowReasoning] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  // Try to parse content as JSON to check for structured message
+  let parsedContent = null;
+  try {
+    parsedContent = JSON.parse(content);
+  } catch (e) {
+    // Not JSON, treat as regular text
+  }
 
   // Custom renderer for the think tags
   const renderContent = (text: string) => {
@@ -190,6 +201,45 @@ export default function FormattedMessage({ content }: { content: string }) {
     },
   };
 
+  // If we have structured content with images
+  if (Array.isArray(parsedContent)) {
+    return (
+      <div className="w-full prose prose-sm dark:prose-invert max-w-none">
+        {parsedContent.map((item, index) => {
+          if (item.type === "text") {
+            return renderContent(item.text || "");
+          } else if (item.type === "image" && item.image) {
+            return (
+              <div key={index} className="my-4 first:mt-0 last:mb-0">
+                <button
+                  onClick={() => setSelectedImage(item.image)}
+                  className="relative block w-full sm:w-[300px] aspect-[3/2] overflow-hidden rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  <Image
+                    src={item.image}
+                    alt="Uploaded content"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 100vw, 300px"
+                  />
+                </button>
+                <ImageDialog
+                  src={item.image}
+                  open={selectedImage === item.image}
+                  onOpenChange={(open) => {
+                    if (!open) setSelectedImage(null);
+                  }}
+                />
+              </div>
+            );
+          }
+          return null;
+        })}
+      </div>
+    );
+  }
+
+  // Regular text message
   return (
     <div className="w-full prose prose-sm dark:prose-invert max-w-none">
       {renderContent(content)}

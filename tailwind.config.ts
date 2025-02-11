@@ -66,6 +66,32 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      keyframes: {
+        "slide-in-from-center": {
+          "0%": {
+            opacity: "0",
+            transform: "translate(-50%, -50%) scale(0.95)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translate(-50%, -50%) scale(1)",
+          },
+        },
+        "slide-out-to-center": {
+          "0%": {
+            opacity: "1",
+            transform: "translate(-50%, -50%) scale(1)",
+          },
+          "100%": {
+            opacity: "0",
+            transform: "translate(-50%, -50%) scale(0.95)",
+          },
+        },
+      },
+      animation: {
+        "slide-in-from-center": "slide-in-from-center 0.2s ease-out",
+        "slide-out-to-center": "slide-out-to-center 0.2s ease-in",
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],

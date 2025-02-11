@@ -224,7 +224,6 @@ export default function ChatBar({
     }
 
     setInput("");
-    // Reset textarea height after clearing input
     if (inputRef.current) {
       inputRef.current.style.height = "auto";
     }
@@ -232,6 +231,35 @@ export default function ChatBar({
     setIsLoading(true);
 
     try {
+      // Upload images first and get their URLs
+      const imageUrls = await Promise.all(
+        selectedImages.map(async (file) => {
+          const formData = new FormData();
+          formData.append("file", file);
+
+          const response = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) {
+            // Parse the error message from the response
+            const errorData = await response.text();
+
+            // If status is 415, it's an unsupported format error
+            if (response.status === 415) {
+              throw new Error(errorData);
+            }
+
+            throw new Error("Failed to upload image");
+          }
+
+          const { url } = await response.json();
+          return url;
+        })
+      );
+
+      // Send message with image URLs
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -239,11 +267,11 @@ export default function ChatBar({
         },
         body: JSON.stringify({
           messages: [{ role: "user", content: currentMessage }],
-          prompt: currentMessage,
-          chatId: params?.chatId,
+          data: { imageUrls },
           model: currentModel.id,
           maxTokens: currentModel.maxTokens,
           provider: currentModel.provider,
+          chatId: params?.chatId,
         }),
       });
 
@@ -300,12 +328,19 @@ export default function ChatBar({
         router.push(`/chat/${chatId}`);
       }
     } catch (error) {
-      toast.error("Failed to send message");
+      // Show the specific error message if available
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to send message");
+      }
       console.error(error);
-      // Restore the input if the request failed
       setInput(currentMessage);
     } finally {
       setIsLoading(false);
+      // Clear selected images
+      setSelectedImages([]);
+      setFilePreviews([]);
     }
   };
 
