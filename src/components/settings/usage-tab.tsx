@@ -250,8 +250,8 @@ export default function UsageTab() {
                   x2="0"
                   y2="1"
                 >
-                  <stop offset="0%" stopColor="#818CF8" stopOpacity={0.8} />
-                  <stop offset="100%" stopColor="#818CF8" stopOpacity={0.2} />
+                  <stop offset="0%" stopColor="#0061FF" stopOpacity={0.8} />
+                  <stop offset="100%" stopColor="#0061FF" stopOpacity={0.2} />
                 </linearGradient>
               </defs>
               <CartesianGrid

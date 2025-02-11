@@ -1,52 +1,45 @@
-import { redirect } from "next/navigation";
-import { auth, signIn } from "./auth";
+// import { redirect } from "next/navigation";
+// import { auth, signIn } from "./auth";
 
-export default async function Home() {
-  const session = await auth();
+// export default async function Home() {
+//   const session = await auth();
 
-  if (session?.user) {
-    return redirect("/chat");
-  }
+//   if (session?.user) {
+//     return redirect("/chat");
+//   }
 
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <form
-        action={async () => {
-          "use server";
-          await signIn("github");
-        }}
-      >
-        <button type="submit">Signin with GitHub</button>
-      </form>
-
-      {session && <div>{session.user?.name}</div>}
-    </div>
-  );
-}
-
-// "use client";
-
-// import { useChat } from "ai/react";
-
-// export default function Chat() {
-//   const { messages, input, handleInputChange, handleSubmit } = useChat();
 //   return (
-//     <div className="flex flex-col w-full max-w-md py-24 mx-auto stretch">
-//       {messages.map((m) => (
-//         <div key={m.id} className="whitespace-pre-wrap">
-//           {m.role === "user" ? "User: " : "AI: "}
-//           {m.content}
-//         </div>
-//       ))}
-
-//       <form onSubmit={handleSubmit}>
-//         <input
-//           className="fixed dark:bg-zinc-900 bottom-0 w-full max-w-md p-2 mb-8 border border-zinc-300 dark:border-zinc-800 rounded shadow-xl"
-//           value={input}
-//           placeholder="Say something..."
-//           onChange={handleInputChange}
-//         />
+//     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
+//       <form
+//         action={async () => {
+//           "use server";
+//           await signIn("github");
+//         }}
+//       >
+//         <button type="submit">Signin with GitHub</button>
 //       </form>
+
+//       {session && <div>{session.user?.name}</div>}
 //     </div>
 //   );
 // }
+
+import { HeroSection } from "@/components/landing-page/hero-section";
+import { ModelsShowcase } from "@/components/landing-page/models-showcase";
+import { ValueComparison } from "@/components/landing-page/value-comparison";
+import { PricingSection } from "@/components/landing-page/pricing-section";
+import { GradientSection } from "@/components/landing-page/gradient-section";
+import { ScrollText } from "@/components/landing-page/scroll-text";
+
+export default function Home() {
+  return (
+    <div className="bg-black">
+      <HeroSection />
+      <ScrollText />
+      <ModelsShowcase />
+      <ValueComparison />
+      <PricingSection />
+      <GradientSection />
+    </div>
+  );
+}

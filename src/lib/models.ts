@@ -50,7 +50,7 @@ export const models: Model[] = [
         color: "#2196F3",
       },
     ],
-    color: "#4CAF50",
+    color: "#0061FF",
   },
   {
     name: "GPT-4o",
@@ -77,7 +77,7 @@ export const models: Model[] = [
         color: "#2196F3",
       },
     ],
-    color: "#01780f",
+    color: "#0061FF",
   },
   {
     name: "o1-mini",
@@ -104,7 +104,7 @@ export const models: Model[] = [
         color: "#9C27B0",
       },
     ],
-    color: "#DC5CE4",
+    color: "#0061FF",
   },
   {
     name: "Claude 3.5 Haiku",
@@ -131,7 +131,7 @@ export const models: Model[] = [
         color: "#2196F3",
       },
     ],
-    color: "#DA7757",
+    color: "#0061FF",
   },
   {
     name: "Claude 3.5 Sonnet",
@@ -158,7 +158,7 @@ export const models: Model[] = [
         color: "#2196F3",
       },
     ],
-    color: "#DA7757",
+    color: "#0061FF",
   },
   {
     name: "Deepseek R1 Distilled",
@@ -191,7 +191,7 @@ export const models: Model[] = [
         color: "#9C27B0",
       },
     ],
-    color: "#2B7FFF",
+    color: "#0061FF",
   },
   {
     name: "Mixtral 8x7B",
@@ -204,6 +204,7 @@ export const models: Model[] = [
       input: "0.00000024",
       output: "0.00000024",
     },
+    info: "Open source model by Mistral outperforming Llama 2 70B on most benchmarks with 6x faster inference",
     tags: [
       {
         name: "Price",
@@ -217,7 +218,7 @@ export const models: Model[] = [
         color: "#FFA726",
       },
     ],
-    color: "#f5a300",
+    color: "#0061FF",
   },
   {
     name: "Llama 3.1 8B",
@@ -244,7 +245,7 @@ export const models: Model[] = [
         color: "#FFA726",
       },
     ],
-    color: "#1A7DF6",
+    color: "#0061FF",
   },
   {
     name: "Llama 3.3 70B",
@@ -271,7 +272,7 @@ export const models: Model[] = [
         color: "#FFA726",
       },
     ],
-    color: "#1A7DF6",
+    color: "#0061FF",
   },
   {
     name: "Gemini 2.0 Flash",
@@ -298,7 +299,7 @@ export const models: Model[] = [
         color: "#2196F3",
       },
     ],
-    color: "#8979CC",
+    color: "#0061FF",
   },
   {
     name: "Gemini 2.0 Flash Lite Preview",
@@ -331,6 +332,6 @@ export const models: Model[] = [
         color: "#FFA726",
       },
     ],
-    color: "#8979CC",
+    color: "#0061FF",
   },
 ];
