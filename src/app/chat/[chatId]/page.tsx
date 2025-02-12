@@ -114,7 +114,7 @@ const ChatIdPage = ({ params }: { params: Promise<{ chatId: string }> }) => {
 
   return (
     <main className="h-[calc(100vh-80px)] -m-4 relative">
-      <div className="absolute inset-0 overflow-y-auto pb-[140px] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 light:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent">
+      <div className="absolute inset-0 overflow-y-auto pb-[150px] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 light:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent">
         <ChatMessages messages={messages} model={model} />
       </div>
       <div className="absolute bottom-0 left-0 right-0 bg-background">
