@@ -32,14 +32,21 @@ export default function ChatMessages({
   const { state } = useSidebar();
   const previousMessageCountRef = useRef(messages.length);
   const isInitialLoadRef = useRef(true);
+  const lastMessageRef = useRef<Message | null>(null);
 
-  // Auto scroll to bottom when new messages are added
+  // Auto scroll to bottom only for new messages, not updates
   useEffect(() => {
     if (listRef.current && !isInitialLoadRef.current) {
+      const lastMessage = messages[messages.length - 1];
+
+      // Only scroll if a new message was added (not during updates)
       if (messages.length > previousMessageCountRef.current) {
-        listRef.current.scrollToIndex(messages.length - 1, {
-          align: "end",
-        });
+        // Check if it's a completely new message, not just an update
+        if (lastMessage?.id !== lastMessageRef.current?.id) {
+          listRef.current.scrollToIndex(messages.length - 1, {
+            align: "end",
+          });
+        }
       }
     }
 
@@ -53,8 +60,10 @@ export default function ChatMessages({
       }, 0);
     }
 
-    onMessagesUpdate?.(messages);
+    // Update refs
+    lastMessageRef.current = messages[messages.length - 1];
     previousMessageCountRef.current = messages.length;
+    onMessagesUpdate?.(messages);
   }, [messages, onMessagesUpdate]);
 
   const renderMessage = (message: Message) => (
