@@ -1,5 +1,5 @@
 import ChatBar from "@/components/chat-bar";
-import { ModelInfoDialog } from "@/components/model-info-dialog";
+// import { ModelInfoDialog } from "@/components/model-info-dialog";
 
 function ChatPage() {
   return (

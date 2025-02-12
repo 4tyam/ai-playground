@@ -57,7 +57,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
         setIsSearching(false);
       }
     }, 300),
-    []
+    [setSearchResults, setIsSearching]
   );
 
   // Cleanup debounce on unmount

@@ -87,7 +87,7 @@ export function ModelSelectorMobile({
           ) : !currentSection ? (
             // Show companies list
             <div className="p-2">
-              {Object.entries(groupedModels).map(([company, companyModels]) => (
+              {Object.entries(groupedModels).map(([company]) => (
                 <Button
                   key={company}
                   variant="ghost"

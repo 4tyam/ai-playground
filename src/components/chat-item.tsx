@@ -5,7 +5,6 @@ import {
   EllipsisIcon,
   Loader2Icon,
   PencilIcon,
-  ShareIcon,
   TrashIcon,
 } from "lucide-react";
 import Image from "next/image";
@@ -89,7 +88,7 @@ const ChatItem = ({
       if (isActive) {
         router.push("/chat");
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete chat");
     } finally {
       setIsDeleting(false);
@@ -107,7 +106,7 @@ const ChatItem = ({
       if (isActive) {
         router.push("/chat");
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to archive chat");
     } finally {
       setIsArchiving(false);

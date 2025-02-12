@@ -113,7 +113,7 @@ export default function ChatMessages({
         ref={listRef}
         className="h-full px-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 light:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent"
       >
-        {messages.map((message, index) => (
+        {messages.map((message) => (
           <div key={message.id} className="py-1.5">
             {renderMessage(message)}
           </div>

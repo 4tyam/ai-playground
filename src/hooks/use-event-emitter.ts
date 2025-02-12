@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 type EventMap = {
   "chats:refresh": void;
 };

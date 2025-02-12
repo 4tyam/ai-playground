@@ -106,7 +106,7 @@ export function SettingsDialog() {
       toast.success("All chats archived");
       setShowArchiveAllConfirm(false);
       router.refresh();
-    } catch (error) {
+    } catch {
       toast.error("Failed to archive chats");
     } finally {
       setIsArchivingAll(false);
@@ -120,7 +120,7 @@ export function SettingsDialog() {
       toast.success("All chats deleted");
       setShowDeleteAllConfirm(false);
       router.refresh();
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete chats");
     } finally {
       setIsDeletingAll(false);

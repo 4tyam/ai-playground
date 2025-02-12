@@ -336,7 +336,7 @@ export default function ChatBar({
                 onMessageSent?.(currentMessage, accumulatedMessage, true);
               }
             }
-          } catch (e) {
+          } catch {
             // Ignore parsing errors as some chunks might be incomplete
             continue;
           }

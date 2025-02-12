@@ -25,7 +25,7 @@ export default function FormattedMessage({ content }: { content: string }) {
   let parsedContent = null;
   try {
     parsedContent = JSON.parse(content);
-  } catch (e) {
+  } catch {
     // Not JSON, treat as regular text
   }
 

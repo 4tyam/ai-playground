@@ -41,7 +41,7 @@ export function PricingSection() {
             Simple, transparent pricing
           </h2>
           <p className="text-gray-400 text-lg">
-            Choose the plan that's right for you
+            Choose the plan that&apos;s right for you
           </p>
         </div>
 

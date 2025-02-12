@@ -83,7 +83,9 @@ export async function POST(req: Request) {
     const results = await Promise.all(uploadPromises);
 
     return NextResponse.json({
-      urls: results.map((result: any) => result.secure_url),
+      urls: (results as { secure_url: string }[]).map(
+        (result) => result.secure_url
+      ),
     });
   } catch (error) {
     console.error("Error uploading files:", error);

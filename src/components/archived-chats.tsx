@@ -80,7 +80,7 @@ export function ArchivedChats({ open, onOpenChange }: ArchivedChatsProps) {
         prevChats.filter((chat) => chat.id !== chatId)
       );
       toast.success("Chat unarchived");
-    } catch (error) {
+    } catch {
       toast.error("Failed to unarchive chat");
     } finally {
       setProcessingChatId(null);
@@ -95,7 +95,7 @@ export function ArchivedChats({ open, onOpenChange }: ArchivedChatsProps) {
       toast.success("All chats unarchived");
       setShowUnarchiveAllConfirm(false);
       router.refresh();
-    } catch (error) {
+    } catch {
       toast.error("Failed to unarchive chats");
     } finally {
       setIsUnarchivingAll(false);
