@@ -20,7 +20,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ModelSelectorMobile } from "./model-selector-mobile";
 
 interface ModelSelectorProps {
@@ -58,6 +58,16 @@ export function ModelSelector({
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [currentSection, setCurrentSection] = useState<string | null>(null);
+
+  // Initialize with default model if no model is selected
+  useEffect(() => {
+    if (!model) {
+      const defaultModel = models.find((m) => m.defaultModel)?.id;
+      if (defaultModel) {
+        setModel(defaultModel);
+      }
+    }
+  }, [model, setModel]);
 
   const renderModelButtonContent = () => {
     if (!model) {

@@ -16,6 +16,7 @@ import { ChevronLeft, ChevronRight, Info, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { models } from "@/lib/models";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useEffect } from "react";
 
 interface ModelSelectorMobileProps {
   open: boolean;
@@ -53,6 +54,16 @@ export function ModelSelectorMobile({
   currentSection,
   setCurrentSection,
 }: ModelSelectorMobileProps) {
+  // Initialize with default model if no model is selected
+  useEffect(() => {
+    if (!model) {
+      const defaultModel = models.find((m) => m.defaultModel)?.id;
+      if (defaultModel) {
+        setModel(defaultModel);
+      }
+    }
+  }, [model, setModel]);
+
   const handleModelSelect = (modelId: string) => {
     setModel(modelId);
     setCurrentSection(null);

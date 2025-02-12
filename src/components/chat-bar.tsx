@@ -77,8 +77,10 @@ export default function ChatBar({
   const router = useRouter();
 
   const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // const [model, setModel] = useState(selectedModel);
+  // Initialize with empty string to avoid hydration mismatch
+  const [model, setModel] = useState("");
 
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
@@ -86,21 +88,37 @@ export default function ChatBar({
   const [showMaxUsageDialog, setShowMaxUsageDialog] = useState(false);
   const [input, setInput] = useState("");
 
-  const [mounted, setMounted] = useState(false);
-  // Initialize with default value only
-  const [model, setModel] = useState("");
-
-  // Handle localStorage in a separate effect after mount
+  // Handle model initialization after mount
   useEffect(() => {
     setMounted(true);
+
+    // If selectedModel prop is provided, use it
+    if (selectedModel) {
+      setModel(selectedModel);
+      return;
+    }
+
+    // Check localStorage
     const savedModel = localStorage.getItem(LOCAL_STORAGE_MODEL_KEY);
     if (savedModel) {
       setModel(savedModel);
+      return;
     }
-  }, []);
+
+    // Fall back to default model
+    const defaultModel = models.find((m) => m.defaultModel)?.id;
+    if (defaultModel) {
+      setModel(defaultModel);
+      return;
+    }
+
+    // Last resort: use first model
+    setModel(models[0].id);
+  }, [selectedModel]);
+
   // Save to localStorage when model changes
   useEffect(() => {
-    if (mounted) {
+    if (mounted && model) {
       localStorage.setItem(LOCAL_STORAGE_MODEL_KEY, model);
     }
   }, [model, mounted]);
@@ -365,13 +383,6 @@ export default function ChatBar({
       setFilePreviews([]);
     }
   };
-
-  // Update model when selectedModel prop changes
-  useEffect(() => {
-    if (selectedModel) {
-      setModel(selectedModel);
-    }
-  }, [selectedModel]);
 
   // Add this useEffect to watch input changes
   useEffect(() => {

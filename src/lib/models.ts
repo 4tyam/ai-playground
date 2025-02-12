@@ -4,6 +4,7 @@ export type Provider = "openai" | "anthropic" | "groq" | "google";
 
 export type Model = {
   name: string;
+  defaultModel?: boolean;
   id: string;
   icon: string;
   provider: Provider;
@@ -280,6 +281,7 @@ export const models: Model[] = [
   },
   {
     name: "Gemini 2.0 Flash",
+    defaultModel: true,
     id: "gemini-2.0-flash",
     icon: "/ai-models/googlegemini.svg",
     provider: "google",
