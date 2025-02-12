@@ -296,3 +296,38 @@ export async function getModelUsage(): Promise<ModelUsage[]> {
 
   return modelStats;
 }
+
+// Search chats
+export async function searchChats(query: string): Promise<
+  {
+    id: string;
+    model: string;
+    title: string | null;
+    createdAt: Date;
+  }[]
+> {
+  const session = await auth();
+
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
+  const searchResults = await db
+    .select({
+      id: chats.id,
+      model: chats.model,
+      title: chats.title,
+      createdAt: chats.createdAt,
+    })
+    .from(chats)
+    .where(
+      and(
+        eq(chats.userId, session.user.id as string),
+        eq(chats.archived, false),
+        sql`LOWER(${chats.title}) LIKE LOWER(${"%" + query + "%"})`
+      )
+    )
+    .orderBy(desc(chats.createdAt));
+
+  return searchResults;
+}

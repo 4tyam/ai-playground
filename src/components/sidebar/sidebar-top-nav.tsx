@@ -3,17 +3,7 @@
 import { SearchIcon, SquarePenIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "@/components/ui/command";
 import { useEffect, useState } from "react";
-import { DialogDescription, DialogTitle } from "@radix-ui/react-dialog";
 import {
   Tooltip,
   TooltipContent,
@@ -23,6 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useSidebar } from "../ui/sidebar";
 import Link from "next/link";
+import { SearchDialog } from "@/components/search-dialog";
 
 function SidebarTopNav() {
   const [open, setOpen] = useState(false);
@@ -36,10 +27,6 @@ function SidebarTopNav() {
         e.preventDefault();
         setOpen((open) => !open);
       }
-      // if (e.key === "x" && (e.metaKey || e.ctrlKey)) {
-      //   e.preventDefault();
-      //   router.push("/chat");
-      // }
     };
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
@@ -111,39 +98,13 @@ function SidebarTopNav() {
               }
             }}
             tooltipContent={
-              <div className="flex flex-col items-center">
-                New chat
-                {/* <div className="flex items-center text-sm text-gray-500 gap-0.5">
-                  <span>⌘</span>
-                  <span>X</span>
-                </div> */}
-              </div>
+              <div className="flex flex-col items-center">New chat</div>
             }
           />
         </div>
       </div>
 
-      <CommandDialog open={open} onOpenChange={setOpen}>
-        <DialogTitle className="sr-only">Search commands</DialogTitle>
-        <DialogDescription className="sr-only">
-          Search through commands and pages using the command palette
-        </DialogDescription>
-        <CommandInput placeholder="Search chats" />
-        <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup heading="Recents">
-            <CommandItem>Calendar</CommandItem>
-            <CommandItem>Search Docs</CommandItem>
-            <CommandItem>Calculator</CommandItem>
-          </CommandGroup>
-          <CommandSeparator />
-          <CommandGroup heading="Settings">
-            <CommandItem>Profile</CommandItem>
-            <CommandItem>Billing</CommandItem>
-            <CommandItem>Settings</CommandItem>
-          </CommandGroup>
-        </CommandList>
-      </CommandDialog>
+      <SearchDialog open={open} onOpenChange={setOpen} />
     </>
   );
 }

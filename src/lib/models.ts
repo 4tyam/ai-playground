@@ -129,12 +129,6 @@ export const models: Model[] = [
         icon: "$$",
         color: "#0BA37F",
       },
-      {
-        name: "Image upload",
-        description: "Supports image upload",
-        icon: ImageIcon,
-        color: "#2196F3",
-      },
     ],
     color: "#0061FF",
   },
