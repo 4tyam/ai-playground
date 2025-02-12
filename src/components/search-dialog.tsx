@@ -40,24 +40,26 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
 
   // Debounced search function
   const debouncedSearch = useCallback(
-    debounce(async (searchQuery: string) => {
+    debounce((searchQuery: string) => {
       if (!searchQuery) {
         setSearchResults([]);
         return;
       }
 
       setIsSearching(true);
-      try {
-        const results = await searchChats(searchQuery);
-        setSearchResults(results);
-      } catch (error) {
-        console.error("Error searching chats:", error);
-        toast.error("Failed to search chats");
-      } finally {
-        setIsSearching(false);
-      }
+      searchChats(searchQuery)
+        .then((results) => {
+          setSearchResults(results);
+        })
+        .catch((error) => {
+          console.error("Error searching chats:", error);
+          toast.error("Failed to search chats");
+        })
+        .finally(() => {
+          setIsSearching(false);
+        });
     }, 300),
-    [setSearchResults, setIsSearching]
+    [] // Empty dependency array since we're using closure values
   );
 
   // Cleanup debounce on unmount
@@ -74,7 +76,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 overflow-hidden max-w-xs sm:max-w-md">
+      <DialogContent className="p-0 overflow-hidden max-w-xs sm:max-w-md rounded-xl">
         <DialogTitle className="sr-only">Search chats</DialogTitle>
         <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-group]]:px-2">
           <CommandInput

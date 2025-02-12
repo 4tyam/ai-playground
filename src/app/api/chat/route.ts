@@ -168,7 +168,6 @@ export const POST = async (req: Request) => {
     });
 
     // Initialize streaming response
-    let fullText = "";
     let finalUsage = { promptTokens: 0, completionTokens: 0 };
 
     const stream = streamText({
@@ -187,11 +186,6 @@ export const POST = async (req: Request) => {
       })(),
       maxTokens: maxTokens || 2000,
       messages: allMessages,
-      onStepFinish(event) {
-        if ("tokens" in event) {
-          fullText += event.tokens;
-        }
-      },
       onFinish({ text, usage }) {
         finalUsage = usage;
 
