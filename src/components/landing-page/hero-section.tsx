@@ -33,7 +33,7 @@ export function HeroSection() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await signIn("github", { callbackUrl: "/chat" });
+      await signIn("google", { callbackUrl: "/chat" });
     } catch (error) {
       console.error("Authentication error:", error);
     }
