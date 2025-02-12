@@ -26,7 +26,7 @@ export const users = pgTable("user", {
     .default("0"),
   maxAmount: numeric("maxAmount", { precision: 25, scale: 20 })
     .notNull()
-    .default("0"),
+    .default("0.5"),
 });
 
 export const accounts = pgTable(
