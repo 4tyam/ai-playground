@@ -8,6 +8,7 @@ export type Model = {
   icon: string;
   provider: Provider;
   company: string;
+  supportsFiles: boolean;
   maxTokens?: number;
   systemPrompt?: string;
   pricing: {
@@ -31,6 +32,7 @@ export const models: Model[] = [
     icon: "/ai-models/openai.svg",
     provider: "openai",
     company: "OpenAI",
+    supportsFiles: true,
     maxTokens: 8000,
     pricing: {
       input: "0.00000015",
@@ -58,6 +60,7 @@ export const models: Model[] = [
     icon: "/ai-models/openai.svg",
     provider: "openai",
     company: "OpenAI",
+    supportsFiles: true,
     maxTokens: 1500,
     pricing: {
       input: "0.0000025",
@@ -85,6 +88,7 @@ export const models: Model[] = [
     icon: "/ai-models/openai.svg",
     provider: "openai",
     company: "OpenAI",
+    supportsFiles: false,
     maxTokens: 3000,
     pricing: {
       input: "0.0000011",
@@ -112,6 +116,7 @@ export const models: Model[] = [
     icon: "/ai-models/anthropic.svg",
     provider: "anthropic",
     company: "Anthropic",
+    supportsFiles: false,
     maxTokens: 3000,
     pricing: {
       input: "0.0000008",
@@ -139,6 +144,7 @@ export const models: Model[] = [
     icon: "/ai-models/anthropic.svg",
     provider: "anthropic",
     company: "Anthropic",
+    supportsFiles: true,
     maxTokens: 1250,
     pricing: {
       input: "0.000003",
@@ -166,6 +172,7 @@ export const models: Model[] = [
     icon: "/ai-models/deepseek.png",
     provider: "groq",
     company: "DeepSeek",
+    supportsFiles: false,
     maxTokens: 10000,
     pricing: {
       input: "0.000002",
@@ -199,6 +206,7 @@ export const models: Model[] = [
     icon: "/ai-models/mistral.svg",
     provider: "groq",
     company: "Mistral",
+    supportsFiles: false,
     maxTokens: 25000,
     pricing: {
       input: "0.00000024",
@@ -226,6 +234,7 @@ export const models: Model[] = [
     icon: "/ai-models/meta.svg",
     provider: "groq",
     company: "Meta",
+    supportsFiles: false,
     maxTokens: 8000,
     pricing: {
       input: "0.0000005",
@@ -253,6 +262,7 @@ export const models: Model[] = [
     icon: "/ai-models/meta.svg",
     provider: "groq",
     company: "Meta",
+    supportsFiles: false,
     maxTokens: 8192,
     pricing: {
       input: "0.00000059",
@@ -280,6 +290,7 @@ export const models: Model[] = [
     icon: "/ai-models/googlegemini.svg",
     provider: "google",
     company: "Google",
+    supportsFiles: true,
     maxTokens: 20000,
     pricing: {
       input: "0.0000001",
@@ -307,6 +318,7 @@ export const models: Model[] = [
     icon: "/ai-models/googlegemini.svg",
     provider: "google",
     company: "Google",
+    supportsFiles: true,
     maxTokens: 40000,
     pricing: {
       input: "0.00000005",

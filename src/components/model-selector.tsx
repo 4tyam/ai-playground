@@ -151,83 +151,87 @@ export function ModelSelector({
               {company}
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent className="w-[280px] rounded-xl">
-              {companyModels.map((m) => (
-                <DropdownMenuItem
-                  key={m.id}
-                  className="p-3 cursor-pointer rounded-xl flex items-start gap-2"
-                  onClick={() => setModel(m.id)}
-                >
-                  <div className="flex-shrink-0 mt-0.5">
-                    <Image
-                      src={m.icon}
-                      alt={m.name}
-                      width={18}
-                      height={18}
-                      className={`${
-                        m.icon.includes("openai") ||
-                        m.icon.includes("anthropic")
-                          ? "dark:invert"
-                          : ""
-                      }`}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-medium">{m.name}</span>
-                      {m.info && (
-                        <TooltipProvider>
-                          <Tooltip delayDuration={200}>
-                            <TooltipTrigger asChild>
-                              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent
-                              side="right"
-                              className="max-w-[200px]"
-                            >
-                              {m.info}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
-                      {model === m.id && (
-                        <span className="ml-auto text-primary font-bold text-base">
-                          ✓
-                        </span>
-                      )}
+              {companyModels.map((m) => {
+                const allTags = [...(m.tags || [])];
+
+                return (
+                  <DropdownMenuItem
+                    key={m.id}
+                    className="p-3 cursor-pointer rounded-xl flex items-start gap-2"
+                    onClick={() => setModel(m.id)}
+                  >
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Image
+                        src={m.icon}
+                        alt={m.name}
+                        width={18}
+                        height={18}
+                        className={`${
+                          m.icon.includes("openai") ||
+                          m.icon.includes("anthropic")
+                            ? "dark:invert"
+                            : ""
+                        }`}
+                      />
                     </div>
-                    {m.tags && m.tags.length > 0 && (
-                      <div className="flex gap-1.5 mt-1">
-                        {m.tags.map((tag, index) => (
-                          <TooltipProvider key={index}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium">{m.name}</span>
+                        {m.info && (
+                          <TooltipProvider>
                             <Tooltip delayDuration={200}>
                               <TooltipTrigger asChild>
-                                <div
-                                  className="px-1.5 py-0.5 text-xs rounded flex items-center justify-center"
-                                  style={{
-                                    color: tag.color,
-                                    backgroundColor: `${tag.color}40`, // 40% opacity
-                                  }}
-                                >
-                                  {typeof tag.icon === "string" ? (
-                                    tag.icon
-                                  ) : (
-                                    <tag.icon className="size-3.5" />
-                                  )}
-                                </div>
+                                <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                               </TooltipTrigger>
-                              {tag.description && (
-                                <TooltipContent side="right">
-                                  {tag.description}
-                                </TooltipContent>
-                              )}
+                              <TooltipContent
+                                side="right"
+                                className="max-w-[200px]"
+                              >
+                                {m.info}
+                              </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
-                        ))}
+                        )}
+                        {model === m.id && (
+                          <span className="ml-auto text-primary font-bold text-base">
+                            ✓
+                          </span>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </DropdownMenuItem>
-              ))}
+                      {allTags.length > 0 && (
+                        <div className="flex gap-1.5 mt-1">
+                          {allTags.map((tag, index) => (
+                            <TooltipProvider key={index}>
+                              <Tooltip delayDuration={200}>
+                                <TooltipTrigger asChild>
+                                  <div
+                                    className="px-1.5 py-0.5 text-xs rounded flex items-center justify-center"
+                                    style={{
+                                      color: tag.color,
+                                      backgroundColor: `${tag.color}40`,
+                                    }}
+                                  >
+                                    {typeof tag.icon === "string" ? (
+                                      tag.icon
+                                    ) : (
+                                      <tag.icon className="size-3.5" />
+                                    )}
+                                  </div>
+                                </TooltipTrigger>
+                                {tag.description && (
+                                  <TooltipContent side="right">
+                                    {tag.description}
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </TooltipProvider>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </DropdownMenuItem>
+                );
+              })}
             </DropdownMenuSubContent>
           </DropdownMenuSub>
         ))}

@@ -49,6 +49,8 @@ const ACCEPTED_DOCUMENT_TYPES = {
   "text/plain": [],
 };
 
+const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
+
 type ChatBarProps = {
   titleShown: boolean;
   modelsReadOnly: boolean;
@@ -130,6 +132,18 @@ export default function ChatBar({
   };
 
   const handleFile = (file: File) => {
+    const selectedModelData = models.find((m) => m.id === model);
+
+    if (!selectedModelData?.supportsFiles) {
+      toast.error("This model doesn't support file uploads");
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("File size must be less than 4MB");
+      return;
+    }
+
     const fileExtension = file.name.split(".").pop()?.toLowerCase();
 
     if (file.type.startsWith("image/")) {
@@ -194,7 +208,15 @@ export default function ChatBar({
       toast.error("Maximum 4 files allowed");
     }
 
-    filesToAdd.forEach(handleFile);
+    const validFiles = filesToAdd.filter((file) => {
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`${file.name} exceeds 4MB limit`);
+        return false;
+      }
+      return true;
+    });
+
+    validFiles.forEach(handleFile);
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -254,8 +276,8 @@ export default function ChatBar({
             throw new Error("Failed to upload image");
           }
 
-          const { url } = await response.json();
-          return url;
+          const { urls } = await response.json();
+          return urls[0]; // Take the first URL since we're uploading one file at a time
         })
       );
 
@@ -502,7 +524,10 @@ export default function ChatBar({
                       variant="outline"
                       size="icon"
                       className="rounded-full size-8 shrink-0 dark:text-gray-300/75 dark:hover:text-gray-300 dark:bg-[#18181B] dark:border-[1.5px]"
-                      disabled={isLoading}
+                      disabled={
+                        isLoading ||
+                        !models.find((m) => m.id === model)?.supportsFiles
+                      }
                     >
                       <Plus className="size-3" />
                       <span className="sr-only">Add</span>
@@ -517,6 +542,17 @@ export default function ChatBar({
                       className="p-2.5 cursor-pointer rounded-xl"
                       onSelect={(e) => {
                         e.preventDefault();
+                        const selectedModelData = models.find(
+                          (m) => m.id === model
+                        );
+
+                        if (!selectedModelData?.supportsFiles) {
+                          toast.error(
+                            "This model doesn't support file uploads"
+                          );
+                          return;
+                        }
+
                         if (selectedImages.length >= 4) {
                           toast.error("Maximum 4 files allowed");
                           return;
@@ -531,6 +567,10 @@ export default function ChatBar({
                           const file = (e.target as HTMLInputElement)
                             .files?.[0];
                           if (file) {
+                            if (file.size > MAX_FILE_SIZE) {
+                              toast.error("File size must be less than 4MB");
+                              return;
+                            }
                             handleFile(file);
                             setDropdownOpen(false);
                           }

@@ -116,91 +116,97 @@ export function ModelSelectorMobile({
           ) : (
             // Show models for selected company
             <div className="p-2 space-y-1">
-              {groupedModels[currentSection].map((m) => (
-                <Button
-                  key={m.id}
-                  variant="ghost"
-                  className="w-full justify-start h-auto px-4 py-3 rounded-xl hover:bg-muted/50"
-                  onClick={() => handleModelSelect(m.id)}
-                >
-                  <div className="flex items-start gap-3 w-full min-h-[32px]">
-                    <Image
-                      src={m.icon}
-                      alt={m.name}
-                      width={20}
-                      height={20}
-                      className={`mt-0.5 ${
-                        m.icon.includes("openai") ||
-                        m.icon.includes("anthropic")
-                          ? "dark:invert"
-                          : ""
-                      }`}
-                    />
-                    <div className="flex flex-col flex-1">
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-medium text-sm">{m.name}</span>
-                          {m.info && (
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <div
-                                  role="button"
-                                  tabIndex={0}
-                                  className="cursor-pointer"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <Info className="h-3.5 w-3.5 text-muted-foreground/70" />
-                                </div>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-[200px] p-2 text-sm">
-                                {m.info}
-                              </PopoverContent>
-                            </Popover>
+              {groupedModels[currentSection].map((m) => {
+                const allTags = [...(m.tags || [])];
+
+                return (
+                  <Button
+                    key={m.id}
+                    variant="ghost"
+                    className="w-full justify-start h-auto px-4 py-3 rounded-xl hover:bg-muted/50"
+                    onClick={() => handleModelSelect(m.id)}
+                  >
+                    <div className="flex items-start gap-3 w-full min-h-[32px]">
+                      <Image
+                        src={m.icon}
+                        alt={m.name}
+                        width={20}
+                        height={20}
+                        className={`mt-0.5 ${
+                          m.icon.includes("openai") ||
+                          m.icon.includes("anthropic")
+                            ? "dark:invert"
+                            : ""
+                        }`}
+                      />
+                      <div className="flex flex-col flex-1">
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-medium text-sm">
+                              {m.name}
+                            </span>
+                            {m.info && (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <div
+                                    role="button"
+                                    tabIndex={0}
+                                    className="cursor-pointer"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Info className="h-3.5 w-3.5 text-muted-foreground/70" />
+                                  </div>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[200px] p-2 text-sm">
+                                  {m.info}
+                                </PopoverContent>
+                              </Popover>
+                            )}
+                          </div>
+                          {model === m.id && (
+                            <span className="text-primary font-bold text-base">
+                              ✓
+                            </span>
                           )}
                         </div>
-                        {model === m.id && (
-                          <span className="text-primary font-bold text-base">
-                            ✓
-                          </span>
+                        {allTags.length > 0 && (
+                          <div className="flex gap-1.5 mt-1">
+                            {allTags.map((tag, index) => (
+                              <Popover key={index}>
+                                <PopoverTrigger asChild>
+                                  <div
+                                    role="button"
+                                    tabIndex={0}
+                                    className="cursor-pointer"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <div
+                                      className="px-1.5 py-0.5 text-xs rounded flex items-center justify-center"
+                                      style={{
+                                        color: tag.color,
+                                        backgroundColor: `${tag.color}40`,
+                                      }}
+                                    >
+                                      {typeof tag.icon === "string" ? (
+                                        tag.icon
+                                      ) : (
+                                        <tag.icon className="size-3.5" />
+                                      )}
+                                    </div>
+                                  </div>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[200px] p-2 text-sm">
+                                  {tag.description || tag.name}
+                                </PopoverContent>
+                              </Popover>
+                            ))}
+                          </div>
                         )}
                       </div>
-                      {m.tags && m.tags.length > 0 && (
-                        <div className="flex gap-1.5 mt-1">
-                          {m.tags.map((tag, index) => (
-                            <Popover key={index}>
-                              <PopoverTrigger asChild>
-                                <div
-                                  role="button"
-                                  tabIndex={0}
-                                  className="cursor-pointer"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <div
-                                    className="px-1.5 py-0.5 text-xs rounded flex items-center justify-center"
-                                    style={{
-                                      color: tag.color,
-                                      backgroundColor: `${tag.color}40`,
-                                    }}
-                                  >
-                                    {typeof tag.icon === "string" ? (
-                                      tag.icon
-                                    ) : (
-                                      <tag.icon className="size-3.5" />
-                                    )}
-                                  </div>
-                                </div>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-[200px] p-2 text-sm">
-                                {tag.description || tag.name}
-                              </PopoverContent>
-                            </Popover>
-                          ))}
-                        </div>
-                      )}
                     </div>
-                  </div>
-                </Button>
-              ))}
+                  </Button>
+                );
+              })}
             </div>
           )}
         </ScrollArea>
