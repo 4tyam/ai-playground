@@ -111,14 +111,14 @@ export const POST = async (req: Request) => {
       };
     }
 
-    // Add a system message if not present
-    const systemMessage: Message = {
-      role: "system",
-      content: "You are a helpful AI assistant.",
-    };
+    // // Add a system message if not present
+    // const systemMessage: Message = {
+    //   role: "system",
+    //   content: "You are a helpful AI assistant.",
+    // };
 
     const allMessages = [
-      systemMessage,
+      // systemMessage,
       ...messageHistory,
       ...messages.slice(0, -1),
       formattedMessage,

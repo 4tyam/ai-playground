@@ -17,6 +17,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { SidebarToggleText } from "@/components/sidebar-toggle-text";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "ai playground",
+};
 
 export default async function ChatLayout({
   children,
