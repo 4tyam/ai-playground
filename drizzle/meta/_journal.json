@@ -57,6 +57,13 @@
       "when": 1738913273944,
       "tag": "0007_equal_black_widow",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1739693095461,
+      "tag": "0008_fantastic_viper",
+      "breakpoints": true
     }
   ]
 }
