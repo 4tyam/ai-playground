@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/auth";
 import { v2 as cloudinary } from "cloudinary";
+import { redis } from "@/lib/redis";
 
 const SUPPORTED_IMAGE_TYPES = [
   "image/png",
@@ -81,6 +82,12 @@ export async function POST(req: Request) {
     });
 
     const results = await Promise.all(uploadPromises);
+
+    // After successful upload, invalidate any related chat cache
+    const chatId = formData.get("chatId");
+    if (chatId) {
+      await redis.del(`chat:${chatId}`);
+    }
 
     return NextResponse.json({
       urls: (results as { secure_url: string }[]).map(

@@ -12,20 +12,10 @@ import {
   chats,
   messages as messagesTable,
 } from "../../../../db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { calculateCost } from "@/lib/pricing";
-
-// Add Message type
-type Message = {
-  role: "user" | "assistant" | "system";
-  content:
-    | string
-    | {
-        type: "text" | "image";
-        text?: string;
-        image?: URL;
-      }[];
-};
+import { redis } from "@/lib/redis";
+import { CachedData, Message } from "@/types";
 
 export const POST = async (req: Request) => {
   const session = await auth();
@@ -34,44 +24,62 @@ export const POST = async (req: Request) => {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  // Get user's current usage and limits
-  const userInfo = await db
-    .select({
-      usageAmount: users.usageAmount,
-      maxAmount: users.maxAmount,
-    })
-    .from(users)
-    .where(eq(users.id, session.user.id as string))
-    .limit(1);
-
-  if (!userInfo.length) {
-    return new NextResponse("User not found", { status: 404 });
-  }
-
-  const { usageAmount, maxAmount } = userInfo[0];
-
-  // Check usage limit before processing anything
-  if (Number(usageAmount) >= Number(maxAmount)) {
-    return new NextResponse("Usage limit exceeded", { status: 403 });
-  }
-
-  const {
-    messages,
-    data,
-    model: requestModel,
-    maxTokens,
-    provider,
-    chatId,
-  } = await req.json();
-
-  if (!messages?.length || !requestModel || !provider) {
-    return new NextResponse("Missing required fields", { status: 400 });
-  }
-
   try {
-    // Get previous messages for context
-    let messageHistory: Message[] = [];
-    if (chatId) {
+    const {
+      messages,
+      data,
+      model: requestModel,
+      maxTokens,
+      provider,
+      chatId,
+    } = await req.json();
+
+    if (!messages?.length || !requestModel || !provider) {
+      return new NextResponse("Missing required fields", { status: 400 });
+    }
+
+    // Start usage check in parallel with message processing
+    const userInfoPromise = db
+      .select({
+        usageAmount: users.usageAmount,
+        maxAmount: users.maxAmount,
+      })
+      .from(users)
+      .where(eq(users.id, session.user.id as string))
+      .limit(1);
+
+    let currentChatId = chatId;
+    const currentMessage = messages[messages.length - 1];
+
+    // Structure the message immediately
+    const formattedMessage: Message = {
+      id: crypto.randomUUID(),
+      role: "user",
+      sentAt: new Date(),
+      content: data?.imageUrls?.length
+        ? [
+            { type: "text", text: currentMessage.content },
+            ...data.imageUrls.map((imageUrl: string) => ({
+              type: "image",
+              image: imageUrl,
+            })),
+          ]
+        : currentMessage.content,
+    };
+
+    // Fetch message history in parallel with usage check
+    const messageHistoryPromise = (async () => {
+      if (!chatId) return [];
+
+      const cachedData = await redis.get(`chat:${chatId}`);
+      if (
+        cachedData &&
+        typeof cachedData === "object" &&
+        "messages" in cachedData
+      ) {
+        return (cachedData as CachedData).messages;
+      }
+
       const previousMessages = await db
         .select({
           role: messagesTable.role,
@@ -82,90 +90,77 @@ export const POST = async (req: Request) => {
         .orderBy(desc(messagesTable.sentAt))
         .limit(10);
 
-      messageHistory = previousMessages.reverse().map((msg) => ({
+      const messageHistory = previousMessages.reverse().map((msg) => ({
+        id: crypto.randomUUID(),
         role: msg.role as "user" | "assistant" | "system",
         content: msg.content,
+        sentAt: new Date(),
       }));
+
+      // Cache in background
+      redis
+        .set(
+          `chat:${chatId}`,
+          { messages: messageHistory, model: requestModel },
+          { ex: 3600 }
+        )
+        .catch(console.error);
+
+      return messageHistory;
+    })();
+
+    // Wait for parallel operations
+    const [userInfo, messageHistory] = await Promise.all([
+      userInfoPromise,
+      messageHistoryPromise,
+    ]);
+
+    if (!userInfo.length) {
+      return new NextResponse("User not found", { status: 404 });
     }
 
-    let currentChatId = chatId;
-    const currentMessage = messages[messages.length - 1];
+    const { usageAmount, maxAmount } = userInfo[0];
 
-    // Structure the current message with images if present
-    let formattedMessage: Message;
-    if (data?.imageUrls?.length) {
-      formattedMessage = {
-        role: "user",
-        content: [
-          { type: "text", text: currentMessage.content },
-          ...data.imageUrls.map((imageUrl: string) => ({
-            type: "image",
-            image: new URL(imageUrl),
-          })),
-        ],
-      };
-    } else {
-      formattedMessage = {
-        role: "user",
-        content: currentMessage.content,
-      };
+    if (Number(usageAmount) >= Number(maxAmount)) {
+      return new NextResponse("Usage limit exceeded", { status: 403 });
     }
-
-    // // Add a system message if not present
-    // const systemMessage: Message = {
-    //   role: "system",
-    //   content: "You are a helpful AI assistant.",
-    // };
 
     const allMessages = [
-      // systemMessage,
       ...messageHistory,
       ...messages.slice(0, -1),
       formattedMessage,
     ];
 
+    // Create chat if needed with title
     if (!currentChatId) {
-      const [newChat] = await db
+      // Use first 50 chars of user message as title
+      const chatTitle =
+        currentMessage.content.slice(0, 50).trim().replace(/\n/g, " ") + // Replace newlines with spaces
+        (currentMessage.content.length > 50 ? "..." : "");
+
+      const [chat] = await db
         .insert(chats)
         .values({
+          id: crypto.randomUUID(),
           userId: session.user.id as string,
           model: requestModel,
-          title:
-            typeof formattedMessage.content === "string"
-              ? formattedMessage.content.slice(0, 100)
-              : formattedMessage.content[0].text?.slice(0, 100) || "New Chat",
+          title: chatTitle,
         })
         .returning({ id: chats.id });
 
-      currentChatId = newChat.id;
-    } else {
-      // Verify chat exists and belongs to user
-      const existingChat = await db
-        .select({ id: chats.id })
-        .from(chats)
-        .where(
-          and(
-            eq(chats.id, currentChatId),
-            eq(chats.userId, session.user.id as string)
-          )
-        )
-        .limit(1);
-
-      if (!existingChat.length) {
-        return new NextResponse("Chat not found", { status: 404 });
-      }
+      currentChatId = chat.id;
     }
 
-    // Insert user message
-    await db.insert(messagesTable).values({
-      chatId: currentChatId,
-      senderId: session.user.id as string,
-      content:
-        typeof formattedMessage.content === "string"
-          ? formattedMessage.content
-          : JSON.stringify(formattedMessage.content),
-      role: "user",
-    });
+    // Insert user message in background
+    db.insert(messagesTable)
+      .values({
+        chatId: currentChatId,
+        senderId: session.user.id as string,
+        content: formattedMessage.content as string,
+        role: "user",
+      })
+      .execute()
+      .catch(console.error);
 
     // Initialize streaming response
     let finalUsage = { promptTokens: 0, completionTokens: 0 };
@@ -189,18 +184,21 @@ export const POST = async (req: Request) => {
       onFinish({ text, usage }) {
         finalUsage = usage;
 
-        // Handle completion here instead of using response.finally
+        // Handle completion in background
         (async () => {
           try {
-            // Ensure we still have session data
-            const userId = session?.user?.id;
-            const userEmail = session?.user?.email;
-            const userName = session?.user?.name;
+            if (!session?.user?.id) return;
 
-            if (!userId || !userEmail || !userName) {
-              console.error("Session data missing during completion");
-              return;
-            }
+            // Insert AI response
+            const [assistantMessage] = await db
+              .insert(messagesTable)
+              .values({
+                chatId: currentChatId,
+                senderId: session.user.id,
+                content: text,
+                role: "assistant",
+              })
+              .returning({ id: messagesTable.id });
 
             // Calculate cost
             const cost = calculateCost(
@@ -209,30 +207,19 @@ export const POST = async (req: Request) => {
               finalUsage.completionTokens
             );
 
-            // Insert AI response
-            const [assistantMessage] = await db
-              .insert(messagesTable)
-              .values({
-                chatId: currentChatId,
-                senderId: userId,
-                content: text,
-                role: "assistant",
-              })
-              .returning({ id: messagesTable.id });
-
-            // Update user's usage amount and create usage log
+            // Update usage in background
             await db.transaction(async (tx) => {
               await tx
                 .update(users)
                 .set({
                   usageAmount: (Number(usageAmount) + Number(cost)).toFixed(20),
                 })
-                .where(eq(users.id, userId));
+                .where(eq(users.id, session?.user?.id as string));
 
               await tx.insert(usageLogs).values({
-                userId,
-                userEmail,
-                userName,
+                userId: session?.user?.id,
+                userEmail: session?.user?.email as string,
+                userName: session?.user?.name,
                 messageId: assistantMessage.id,
                 model: requestModel,
                 promptTokens: finalUsage.promptTokens,
@@ -240,22 +227,45 @@ export const POST = async (req: Request) => {
                 totalCost: cost,
               });
             });
+
+            // Update Redis cache
+            if (currentChatId) {
+              const updatedMessages = [
+                ...messageHistory,
+                formattedMessage,
+                {
+                  id: crypto.randomUUID(),
+                  role: "assistant",
+                  content: text,
+                  sentAt: new Date(),
+                },
+              ];
+
+              await redis.set(
+                `chat:${currentChatId}`,
+                {
+                  messages: updatedMessages,
+                  model: requestModel,
+                },
+                { ex: 3600 }
+              );
+            }
           } catch (error) {
-            console.error("Error saving streamed response:", error);
+            console.error("Error in completion handler:", error);
           }
         })();
       },
     });
 
-    // Create a ReadableStream that we can send to the client
+    // Create a ReadableStream for the response
     const encoder = new TextEncoder();
     const readable = new ReadableStream({
       async start(controller) {
         try {
           for await (const chunk of stream.textStream) {
-            // Send each chunk as a server-sent event
-            const data = JSON.stringify({ tokens: chunk });
-            controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ tokens: chunk })}\n\n`)
+            );
           }
           controller.close();
         } catch (error) {
@@ -264,39 +274,16 @@ export const POST = async (req: Request) => {
       },
     });
 
-    // Add chatId to response headers
+    // Add response headers
     const headers = new Headers();
     headers.set("X-Chat-Id", currentChatId);
     headers.set("Content-Type", "text/event-stream");
     headers.set("Cache-Control", "no-cache");
     headers.set("Connection", "keep-alive");
 
-    return new Response(readable, {
-      headers,
-      status: 200,
-    });
+    return new Response(readable, { headers });
   } catch (error) {
     console.error("Error in chat route:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 };
-
-// import { openai } from '@ai-sdk/openai';
-// import { streamText } from 'ai';
-
-// // Allow streaming responses up to 30 seconds
-// export const maxDuration = 30;
-
-// export async function POST(req: Request) {
-//   const { messages } = await req.json();
-
-//   const result = streamText({
-//     model: openai('gpt-4o-mini'),
-//     messages,
-//     onFinish({ text }) {
-//       console.log(text);
-//     }
-//   });
-
-//   return result.toDataStreamResponse();
-// }

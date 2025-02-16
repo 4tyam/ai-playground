@@ -12,64 +12,19 @@ import {
 } from "./ui/tooltip";
 import Image from "next/image";
 import { ImageDialog } from "@/components/image-dialog";
+import { MessageContent } from "@/types";
 
 interface CodeProps extends ComponentPropsWithoutRef<"code"> {
   inline?: boolean;
 }
 
-export default function FormattedMessage({ content }: { content: string }) {
+interface FormattedMessageProps {
+  content: string | MessageContent[];
+}
+
+export default function FormattedMessage({ content }: FormattedMessageProps) {
   const [showReasoning, setShowReasoning] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-
-  // Try to parse content as JSON to check for structured message
-  let parsedContent = null;
-  try {
-    parsedContent = JSON.parse(content);
-  } catch {
-    // Not JSON, treat as regular text
-  }
-
-  // Custom renderer for the think tags
-  const renderContent = (text: string) => {
-    const parts = text.split(/(<think>[\s\S]*?<\/think>)/);
-
-    return parts.map((part, index) => {
-      if (part.startsWith("<think>") && part.endsWith("</think>")) {
-        const reasoningContent = part.slice(7, -8).trim();
-
-        return (
-          <div key={index}>
-            <div className="rounded-lg">
-              <button
-                onClick={() => setShowReasoning(!showReasoning)}
-                className="w-full px-3 py-1.5 flex items-center gap-1.5 text-sm text-gray-500"
-              >
-                <span className="font-medium">AI Reasoning</span>
-                {showReasoning ? (
-                  <ChevronUp className="h-3.5 w-3.5" />
-                ) : (
-                  <ChevronDown className="h-3.5 w-3.5" />
-                )}
-              </button>
-              {showReasoning && (
-                <div className="px-3 pb-2 text-sm text-gray-500">
-                  <ReactMarkdown components={components}>
-                    {reasoningContent}
-                  </ReactMarkdown>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      }
-
-      return part ? (
-        <ReactMarkdown key={index} components={components}>
-          {part}
-        </ReactMarkdown>
-      ) : null;
-    });
-  };
 
   const CodeBlock = ({
     language,
@@ -201,18 +156,60 @@ export default function FormattedMessage({ content }: { content: string }) {
     },
   };
 
-  // If we have structured content with images
-  if (Array.isArray(parsedContent)) {
+  // Define renderContent first
+  const renderContent = (text: string) => {
+    const parts = text.split(/(<think>[\s\S]*?<\/think>)/);
+
+    return parts.map((part, index) => {
+      if (part.startsWith("<think>") && part.endsWith("</think>")) {
+        const reasoningContent = part.slice(7, -8).trim();
+
+        return (
+          <div key={index}>
+            <div className="rounded-lg">
+              <button
+                onClick={() => setShowReasoning(!showReasoning)}
+                className="w-full px-3 py-1.5 flex items-center gap-1.5 text-sm text-gray-500"
+              >
+                <span className="font-medium">AI Reasoning</span>
+                {showReasoning ? (
+                  <ChevronUp className="h-3.5 w-3.5" />
+                ) : (
+                  <ChevronDown className="h-3.5 w-3.5" />
+                )}
+              </button>
+              {showReasoning && (
+                <div className="px-3 pb-2 text-sm text-gray-500">
+                  <ReactMarkdown components={components}>
+                    {reasoningContent}
+                  </ReactMarkdown>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      return part ? (
+        <ReactMarkdown key={index} components={components}>
+          {part}
+        </ReactMarkdown>
+      ) : null;
+    });
+  };
+
+  // Then handle structured content
+  if (Array.isArray(content)) {
     return (
       <div className="w-full prose prose-sm dark:prose-invert max-w-none">
-        {parsedContent.map((item, index) => {
-          if (item.type === "text") {
-            return renderContent(item.text || "");
+        {content.map((item, index) => {
+          if (item.type === "text" && item.text) {
+            return renderContent(item.text);
           } else if (item.type === "image" && item.image) {
             return (
               <div key={index} className="my-4 first:mt-0 last:mb-0">
                 <button
-                  onClick={() => setSelectedImage(item.image)}
+                  onClick={() => setSelectedImage(item.image || null)}
                   className="relative block w-full sm:w-[300px] aspect-[3/2] overflow-hidden rounded-lg hover:opacity-90 transition-opacity"
                 >
                   <Image

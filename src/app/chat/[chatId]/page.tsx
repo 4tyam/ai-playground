@@ -30,7 +30,6 @@ const ChatIdPage = ({ params }: { params: Promise<{ chatId: string }> }) => {
         const response = await fetch(`/api/chat/${chatId}/messages`);
 
         if (response.status === 404) {
-          // Chat not found, redirect to 404
           return notFound();
         }
 
@@ -40,15 +39,10 @@ const ChatIdPage = ({ params }: { params: Promise<{ chatId: string }> }) => {
 
         const data = await response.json();
         setMessages(data.chatMessages);
-
-        // Get model from the first message since it's included in each message
-        if (data.chatMessages.length > 0) {
-          setModel(data.chatMessages[0].model);
-        }
+        setModel(data.model);
       } catch (error) {
         console.error("Error fetching messages:", error);
         toast.error("Failed to load chat");
-        // Optionally redirect to home page on error
         router.push("/chat");
       } finally {
         setIsLoading(false);
